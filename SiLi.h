@@ -6,8 +6,7 @@
 namespace SiLi
 {
 
-using float_type = float;
-template<int, int, typename T = float_type, typename... Args>
+template<int, int, typename T = float, typename... Args>
 class Matrix;
 
 template<int rows, int cols, int rowStride, typename T>
@@ -207,10 +206,10 @@ Matrix<3, 3, T> inv(MatrixView<3, 3, rowStride, T> const& mat) {
 	Matrix<3, 3, T> ret;
 	for (int row(0); row < 3; ++row) {
 		for (int col(0); col < 3; ++col) {
-			float_type tl = mat((row+1)%3, (col+1)%3);
-			float_type br = mat((row+2)%3, (col+2)%3);
-			float_type tr = mat((row+1)%3, (col+2)%3);
-			float_type bl = mat((row+2)%3, (col+1)%3);
+			T tl = mat((row+1)%3, (col+1)%3);
+			T br = mat((row+2)%3, (col+2)%3);
+			T tr = mat((row+1)%3, (col+2)%3);
+			T bl = mat((row+2)%3, (col+1)%3);
 			ret(col, row) = (tl*br-tr*bl) * c;
 		}
 	}
