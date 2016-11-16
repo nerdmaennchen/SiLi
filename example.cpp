@@ -38,9 +38,13 @@ int main() {
 		b.subview<2, 2>(0, 0) = c;
 		c = b.subview<2, 2>(0, 0);
 		c.subview<2, 2>(0, 0) = b.subview<2, 2>(0, 0);
-
-
 	}
+	{
+		SiLi::Matrix<2, 2> b({{1, 2}, {3, 4}});
+		SiLi::Matrix<2, 2> c({{1, 2}, {3, 4}});
+		b += c;
+	}
+
 
 }
 

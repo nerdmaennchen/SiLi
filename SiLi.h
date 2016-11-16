@@ -67,7 +67,9 @@ public:
 		}
 		return (*this);
 	}
-	Matrix<rows, cols, T>& operator+=(Matrix<rows, cols, T> const& rhs) const {
+
+	template <int oRowStride>
+	MatrixView& operator+=(MatrixView<rows, cols, oRowStride, T> const& rhs) {
 		for (int row(0); row < rows; ++row) {
 			for (int col(0); col < cols; ++col) {
 				(*this)(row, col) += rhs(row, col);
@@ -84,7 +86,9 @@ public:
 		}
 		return (*this);
 	}
-	Matrix<rows, cols, T>& operator-=(Matrix<rows, cols, T> const& rhs) const {
+
+	template <int oRowStride>
+	MatrixView& operator-=(MatrixView<rows, cols, oRowStride, T> const& rhs) {
 		for (int row(0); row < rows; ++row) {
 			for (int col(0); col < cols; ++col) {
 				(*this)(row, col) -= rhs(row, col);
