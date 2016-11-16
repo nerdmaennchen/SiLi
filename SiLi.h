@@ -126,7 +126,7 @@ public:
 	}
 
 	template<int oRowStride>
-	MatrixView<rows, cols, rowStride, T>& operator=(MatrixView<rows, cols, rowStride, T> const& rhs) {
+	MatrixView<rows, cols, rowStride, T>& operator=(MatrixView<rows, cols, oRowStride, T> const& rhs) {
 		for (int r(0); r < rows; ++r) {
 			for (int c(0); c < cols; ++c) {
 				(*this)(r, c) = rhs(r, c);
