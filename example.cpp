@@ -43,6 +43,12 @@ int main() {
 		SiLi::Matrix<2, 2> b({{1, 2}, {3, 4}});
 		SiLi::Matrix<2, 2> c({{1, 2}, {3, 4}});
 		b += c;
+		b -= c;
+		b + c;
+		b - c;
+		b * c;
+
+		SiLi::Matrix<2, 2> d(b.subview<2, 2>(0, 0));
 	}
 
 

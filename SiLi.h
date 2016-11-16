@@ -162,8 +162,8 @@ public:
 		}
 	}
 
-//	template<int rowStride>
-	Matrix(Matrix<rows, cols, T> const& other) : SuperType(&(vals[0][0])) {
+	template<int rowStride>
+	Matrix(MatrixView<rows, cols, rowStride, T> const& other) : SuperType(&(vals[0][0])) {
 		for (int r(0); r < rows; ++r) {
 			for (int c(0); c < cols; ++c) {
 				(*this)(r, c) = other(r, c);
