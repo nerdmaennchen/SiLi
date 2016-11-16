@@ -16,8 +16,8 @@ public:
 	MatrixView(T* base) : basePtr(base) {}
 	MatrixView(MatrixView const& rhs) : basePtr(rhs.basePtr){}
 
-	constexpr int num_rows() {return rows;}
-	constexpr int num_cols() {return cols;}
+	constexpr int num_rows() const {return rows;}
+	constexpr int num_cols() const {return cols;}
 
 	T& operator()(int row, int col) & {
 		return *(basePtr + (row * rowStride) + col);
@@ -148,9 +148,6 @@ class Matrix<rows, cols, T> : public MatrixView<rows, cols, cols, T> {
 	using SuperType = MatrixView<rows, cols, cols, T>;
 public:
 
-
-	constexpr int num_rows() {return rows;}
-	constexpr int num_cols() {return cols;}
 
 	Matrix() : MatrixView<rows, cols, cols, T>(&(vals[0][0])) {}
 
