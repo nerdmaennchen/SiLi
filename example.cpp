@@ -21,6 +21,27 @@ int main() {
 	subview *= 2;
 	std::cout << subview << std::endl;
 	std::cout << b << std::endl;
+
+	{
+		SiLi::Matrix<2, 2> b({{1, 2}, {3, 4}});
+		SiLi::Matrix<2, 2> c({{1, 2}, {3, 4}});
+		auto view = (b+c).submat<2, 2>(0, 0);
+		view(2, 2) = 5;
+
+		SiLi::Matrix<2, 2> d({{1, 2}, {3, 4}});
+		std::cout << view << std::endl;
+	}
+	{
+		SiLi::Matrix<2, 2> b({{1, 2}, {3, 4}});
+		SiLi::Matrix<2, 2> c({{1, 2}, {3, 4}});
+		b = c;
+		b.subview<2, 2>(0, 0) = c;
+		c = b.subview<2, 2>(0, 0);
+		c.subview<2, 2>(0, 0) = b.subview<2, 2>(0, 0);
+
+
+	}
+
 }
 
 

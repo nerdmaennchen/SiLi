@@ -11,8 +11,10 @@ class Matrix;
 
 template<int rows, int cols, int rowStride, typename T>
 class MatrixView {
+	static_assert(rows >= 0, "Row number must be positive");
+	static_assert(cols >= 0, "Coloumn number must be positive");
 protected:
-	T* basePtr;
+	T* const basePtr;
 public:
 	MatrixView(T* base) : basePtr(base) {}
 	MatrixView(MatrixView const& rhs) : basePtr(rhs.basePtr){}
@@ -20,17 +22,34 @@ public:
 	constexpr int num_rows() {return rows;}
 	constexpr int num_cols() {return cols;}
 
-	T& operator()(int row, int col) {
+	T& operator()(int row, int col) & {
 		return *(basePtr + (row * rowStride) + col);
 	}
-	T const& operator()(int row, int col) const {
+	T const& operator()(int row, int col) const& {
 		return *(basePtr + (row * rowStride) + col);
 	}
 
+	T operator()(int row, int col) && {
+		return *(basePtr + (row * rowStride) + col);
+	}
+
+
 	template<int subRows, int subCols>
-	MatrixView<subRows, subCols, rowStride, T> subview(int startR, int startC) {
+	MatrixView<subRows, subCols, rowStride, T> subview(int startR, int startC) & {
 		return MatrixView<subRows, subCols, rowStride, T>(&((*this)(startR, startC)));
 	}
+
+	template<int subRows, int subCols>
+	Matrix<subRows, subCols, T> submat(int startR, int startC) && {
+		Matrix<cols, rows, T> ret;
+		for (int r(0); r < subRows; ++r) {
+			for (int c(0); c < subCols; ++c) {
+				ret(r, c) = (*this)(r + startR, c + startC);
+			}
+		}
+		return ret;
+	}
+
 
 	MatrixView<rows, cols, rowStride, T>& operator*=(T const& rhs) {
 		for (int r(0); r < rows; ++r) {
@@ -83,8 +102,12 @@ public:
 		return (*this);
 	}
 
+	MatrixView<rows, cols, rowStride, T>& operator=(MatrixView<rows, cols, rowStride, T> const& rhs) {
+		return operator=<rowStride>(rhs);
+	}
+
 	template<int oRowStride>
-	MatrixView<rows, cols, rowStride, T>& operator=(MatrixView<rows, cols, oRowStride, T> const& rhs) {
+	MatrixView<rows, cols, rowStride, T>& operator=(MatrixView<rows, cols, rowStride, T> const& rhs) {
 		for (int r(0); r < rows; ++r) {
 			for (int c(0); c < cols; ++c) {
 				(*this)(r, c) = rhs(r, c);
@@ -146,12 +169,8 @@ public:
 
 	template<int rowStride>
 	Matrix<rows, cols, T>& operator=(MatrixView<rows, cols, rowStride, T> const& other) {
-		this->basePtr = &(vals[0][0]);
-		for (int r(0); r < rows; ++r) {
-			for (int c(0); c < cols; ++c) {
-				(*this)(r, c) = other(r, c);
-			}
-		}
+		SuperType::operator=(other);
+		return *this;
 	}
 };
 
