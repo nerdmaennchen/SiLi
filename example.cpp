@@ -49,5 +49,9 @@ int main() {
 		b * c;
 
 		SiLi::Matrix<2, 2> d(b.subview<2, 2>(0, 0));
+
+		(b+c).submat<1, 1>(1, 1);
+		b.submat<1, 1>(1, 1);
+
 	}
 }

@@ -33,19 +33,37 @@ public:
 
 	template<int subRows, int subCols>
 	MatrixView<subRows, subCols, rowStride, T> subview(int startR, int startC) & {
+		static_assert(subRows <= rows, "rows must be smaller or equal to the current view");
+		static_assert(subCols <= cols, "cols must be smaller or equal to the current view");
+
 		return MatrixView<subRows, subCols, rowStride, T>(&((*this)(startR, startC)));
 	}
 
 	template<int subRows, int subCols>
+	MatrixView<subRows, subCols, rowStride, T> subview(int startR, int startC) const& {
+		static_assert(subRows <= rows, "rows must be smaller or equal to the current view");
+		static_assert(subCols <= cols, "cols must be smaller or equal to the current view");
+
+		return MatrixView<subRows, subCols, rowStride, T>(&((*this)(startR, startC)));
+	}
+
+
+	template<int subRows, int subCols>
 	Matrix<subRows, subCols, T> submat(int startR, int startC) && {
-		Matrix<cols, rows, T> ret;
-		for (int r(0); r < subRows; ++r) {
-			for (int c(0); c < subCols; ++c) {
-				ret(r, c) = (*this)(r + startR, c + startC);
+		return Matrix<subRows, subCols, T>(subview<subRows, subCols>(startR, startC));
+	}
+
+	template<int subRows, int subCols>
+	Matrix<subRows, subCols, T> submat(int startR, int startC) const& {
+		Matrix<subRows, subCols, T> ret;
+		for (int r(0); r < rows; ++r) {
+			for (int c(0); c < cols; ++c) {
+				ret(r, c) = (*this)(r, c);
 			}
 		}
 		return ret;
 	}
+
 
 
 	MatrixView<rows, cols, rowStride, T>& operator*=(T const& rhs) {
