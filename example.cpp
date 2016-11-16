@@ -1,6 +1,6 @@
 
 #include "SiLi.h"
-#include <iostream>
+#include "SiLi-iostream.h"
 
 int main() {
 	SiLi::Matrix<3, 2> b({{1, 0}, {0, 1}, {1, 0}});
@@ -50,9 +50,4 @@ int main() {
 
 		SiLi::Matrix<2, 2> d(b.subview<2, 2>(0, 0));
 	}
-
-
 }
-
-
-

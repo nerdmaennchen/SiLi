@@ -1,8 +1,5 @@
 #pragma once
 
-// to disable pretty printed std::cout of views comment out this define
-#define IO_STREAM_PRESENT
-
 namespace SiLi
 {
 
@@ -323,19 +320,3 @@ Matrix<rows, cols, T> operator*(T const& lhs, MatrixView<rows, cols, rs, T> cons
 }
 
 }
-
-
-#ifdef IO_STREAM_PRESENT
-#include <iostream>
-template<int rows, int cols, int rowStride, typename T>
-std::ostream& operator<< (std::ostream& stream, SiLi::MatrixView<rows, cols, rowStride, T> const& view) {
-	for (int i(0); i < view.num_rows(); ++i) {
-		for (int j(0); j < view.num_cols(); ++j) {
-			stream << view(i, j) << "\t";
-		}
-		stream << "\n";
-	}
-	return stream;
-}
-#endif
-
