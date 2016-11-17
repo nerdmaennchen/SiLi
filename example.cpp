@@ -57,5 +57,10 @@ int main() {
 
 		b.subview<1, 1>(1, 1) = e.subview<1, 1>(0, 0);
 
+		// lines that shouldn't compile
+//		b.submat<1, 1>(1, 1) = e.subview<1, 1>(0, 0);
+//		SiLi::Matrix<2, 2>(0).subview<1, 1>(0, 0);
+
+
 	}
 }

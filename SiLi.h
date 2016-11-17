@@ -47,6 +47,10 @@ public:
 		return MatrixView<subRows, subCols, rowStride, T>(&((*this)(startR, startC)));
 	}
 
+	template<int subRows, int subCols>
+	MatrixView<subRows, subCols, rowStride, T> subview(int startR, int startC) && = delete;
+
+
 
 	template<int subRows, int subCols>
 	Matrix<subRows, subCols, T> submat(int startR, int startC) && {
@@ -184,10 +188,14 @@ public:
 	}
 
 	template<int rowStride>
-	Matrix<rows, cols, T>& operator=(MatrixView<rows, cols, rowStride, T> const& other) {
+	Matrix<rows, cols, T>& operator=(MatrixView<rows, cols, rowStride, T> const& other) & {
 		SuperType::operator=(other);
 		return *this;
 	}
+
+	template<int rowStride>
+	Matrix<rows, cols, T>& operator=(MatrixView<rows, cols, rowStride, T> const& other) && = delete;
+
 };
 
 template<int rows, int cols, int rowStride, typename T>
