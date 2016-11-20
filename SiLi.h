@@ -161,6 +161,17 @@ public:
 		return (*this);
 	}
 
+	Matrix<rows, cols, T> operator-() const {
+		Matrix<rows, cols, T> ret;
+		for (int r(0); r < rows; ++r) {
+			for (int c(0); c < cols; ++c) {
+				ret(r, c) = -(*this)(r, c);
+			}
+		}
+		return ret;
+	}
+
+
 	MatrixView& operator=(T const& rhs) {
 		for (int r(0); r < rows; ++r) {
 			for (int c(0); c < cols; ++c) {

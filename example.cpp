@@ -24,6 +24,7 @@ int main() {
 	std::cout << subview << std::endl;
 	std::cout << b << std::endl;
 
+	std::cout << "first tests\n";
 	{
 		SiLi::Matrix<2, 2> b({{1, 2}, {3, 4}});
 		SiLi::Matrix<2, 2> c({{1, 2}, {3, 4}});
@@ -32,6 +33,7 @@ int main() {
 
 		SiLi::Matrix<2, 2> d({{1, 2}, {3, 4}});
 		std::cout << view << std::endl;
+		std::cout << -view << std::endl;
 	}
 	{
 		SiLi::Matrix<2, 2> b({{1, 2}, {3, 4}});
