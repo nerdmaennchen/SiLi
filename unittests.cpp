@@ -87,6 +87,43 @@ void unittests() {
 		v2 = v1;
 //		v4 = v1;
 	}
+	{
+		SiLi::Matrix<2, 2> b({{1, 2}, {3, 4}});
+		std::cout << b << std::endl;
+		std::cout << b.t() << std::endl;
+
+		SiLi::Matrix<4, 4> c({{1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12}, {13, 14, 15, 16}});
+
+		std::cout << std::boolalpha;
+		std::cout << equal(c) << std::endl;
+		std::cout << equal(c.t()) << std::endl;
+		std::cout << equal(c.subview<2, 2>(1, 1)) << std::endl;
+		std::cout << equal(c.subview<2, 2>(1, 1).t()) << std::endl;
+		std::cout << equal(c.subview<2, 2>(2, 1)) << std::endl;
+		std::cout << equal(c.subview<2, 2>(2, 1).t()) << std::endl;
+		std::cout << equal(c.subview<3, 3>(0, 1)) << std::endl;
+		std::cout << equal(c.subview<3, 3>(0, 1).t()) << std::endl;
+		std::cout << equal(c.subview<3, 3>(1, 0)) << std::endl;
+		std::cout << equal(c.subview<3, 3>(1, 0).t()) << std::endl;
+	}
+	std::cout << "next section\n";
+	{
+		SiLi::Matrix<3, 2> b({{1, 0}, {0, 1}, {1, 0}});
+		SiLi::Matrix<2, 3> c({{1, 0, 0}, {0, 1, 0}});
+		SiLi::Matrix<3, 3> d({{1, 0, 0}, {0, 1, 0}, {1, 0, 0}});
+		SiLi::Matrix<3, 3> e({{1, 0, 1}, {0, 1, 0}, {0, 0, 0}});
+
+		std::cout << equal(b * c) << std::endl;
+		std::cout << equal((b * c).t()) << std::endl;
+		std::cout << equal(b * c, d) << std::endl;
+		std::cout << equal((b * c).t(), e) << std::endl;
+
+		//auto const& f = b;
+		//SiLi::MatrixView<2, 3, 2, true, const float> g = f.t();
+		//g = f.t();
+
+	}
+
 
 }
 
