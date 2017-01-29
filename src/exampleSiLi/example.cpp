@@ -1,8 +1,6 @@
 
-#include "SiLi.h"
-#include "SiLi-iostream.h"
-
-void unittests();
+#include <SiLi/SiLi.h>
+#include <SiLi/SiLi-iostream.h>
 
 int main() {
 	SiLi::Matrix<3, 2> b({{1, 0}, {0, 1}, {1, 0}});
@@ -65,5 +63,4 @@ int main() {
 //		b.submat<1, 1>(1, 1) = e.subview<1, 1>(0, 0);
 //		SiLi::Matrix<2, 2>(0).subview<1, 1>(0, 0);
 	}
-	unittests();
 }

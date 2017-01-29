@@ -1,0 +1,4 @@
+name: SiLi
+projects:
+  - name: testSiLi
+    warningsAsErrors: false

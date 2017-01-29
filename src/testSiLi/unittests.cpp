@@ -1,5 +1,5 @@
-#include "SiLi.h"
-#include "SiLi-iostream.h"
+#include <SiLi/SiLi.h>
+#include <SiLi/SiLi-iostream.h>
 
 
 template <int rows, int cols, typename P1, typename P2, typename T>
@@ -123,7 +123,10 @@ void unittests() {
 		//g = f.t();
 
 	}
-
+}
+int main() {
+void unittests();
 
 }
+
 
