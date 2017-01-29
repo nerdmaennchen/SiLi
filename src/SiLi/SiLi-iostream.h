@@ -6,7 +6,7 @@
 namespace SiLi
 {
 template<int rows, int cols, typename Prop, typename T>
-std::ostream& operator<< (std::ostream& stream, SiLi::MatrixView<rows, cols, Prop, T> const& view) {
+std::ostream& operator<< (std::ostream& stream, SiLi::MatrixView<rows, cols, Prop, T const> const& view) {
 	for (int i(0); i < view.num_rows(); ++i) {
 		for (int j(0); j < view.num_cols(); ++j) {
 			stream << view(i, j) << "\t";
@@ -16,7 +16,7 @@ std::ostream& operator<< (std::ostream& stream, SiLi::MatrixView<rows, cols, Pro
 	return stream;
 }
 template<int rows, int cols, typename Prop, typename T>
-void _debugPrint(std::string const& _name, MatrixView<rows, cols, Prop, T> const& view) {
+void _debugPrint(std::string const& _name, MatrixView<rows, cols, Prop, T const> const& view) {
 	std::cout << _name << "\n";
 	std::cout << view;
 	std::cout << "type: " << typeid(T).name()

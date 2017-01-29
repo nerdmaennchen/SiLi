@@ -1,4 +1,3 @@
 name: SiLi
-projects:
-  - name: testSiLi
-    warningsAsErrors: false
+extRepositories:
+  - url: git@github.com:SGSSGene/gtest.git
