@@ -2,66 +2,10 @@
 #include <SiLi/SiLi-iostream.h>
 #include <gtest/gtest.h>
 
-
-template <int rows, int cols, typename P1, typename P2, typename T>
-bool operator==(SiLi::MatrixView<rows, cols, P1, T const> const& lhs,
-                SiLi::MatrixView<rows, cols, P2, T const> const& rhs) {
-
-	for (int i(0); i < rows; ++i) {
-		for (int j(0); j < cols; ++j) {
-			if (lhs(i, j) != rhs(i, j)) return false;
-		}
-	}
-	return true;
-}
-
-template <int rows, int cols, typename Props, typename T>
-auto trans2(SiLi::MatrixView<rows, cols, Props, T const> const& view) -> SiLi::Matrix<rows, cols, T> {
-	SiLi::Matrix<rows, cols, T> retMat;
-	for (int r(0); r < rows; ++r) {
-		for (int c(0); c < cols; ++c) {
-			retMat(c, r) = view(r, c);
-		}
-	}
-	return retMat;
-}
-
-/*template <int rows, int cols, typename P1, typename P2, typename T>
-bool cmp(SiLi::MatrixView<rows, cols, P1, T const> const& lhs,
-                SiLi::MatrixView<rows, cols, P2, T const> const& rhs) {
-
-	for (int i(0); i < rows; ++i) {
-		for (int j(0); j < cols; ++j) {
-			if (lhs(i, j) != rhs(i, j)) return false;
-		}
-	}
-	return true;
-}*/
-
-template <int rows, int cols, typename Prop, typename T>
-auto asMat(SiLi::MatrixView<rows, cols, Prop, T> const& view) -> SiLi::Matrix<rows, cols, T> {
-	return {view};
-}
-template <typename T1>
-bool equal(T1 const& t1) {
-	return t1 == asMat(t1);
-}
-template <typename T1, typename T2>
-bool equal(T1 const& t1, T2 const& t2) {
-	return t1 == t2;
-}
-
-
-
 using namespace SiLi;
 template <int rows, int cols>
 using M = Matrix<rows, cols>;
 
-#define CHECK(a, b) \
-	if ((a) != (b)) { \
-		std::cout << "unittest fail in line: " << __LINE__ << "\n"; \
-		std::cout << std::boolalpha << false << ": " << #a << " -> " << a << " != " << #b << "\n"; \
-	}
 
 TEST(SiLi, init0) {
 	M< 0, 0>  m1({});
@@ -271,14 +215,7 @@ TEST(SiLi, matrixView_iterator2) {
 	EXPECT_EQ(34, v[8]);
 }
 
-
-/*template <typename T, int rows, int cols>
-void make_mat(T const (&values)[rows][cols]) {
-	std::cout << rows << std::endl;
-	std::cout << cols << std::endl;
-
-}*/
-
+#if __GNUC__ > 4
 TEST(SiLi, matrixView_make_matrix) {
 	auto m = SiLi::make_mat({{11, 12, 13},
 	                         {21, 22, 23}});
@@ -293,27 +230,28 @@ TEST(SiLi, matrixView_make_matrix) {
 	EXPECT_EQ(13,  m(0, 2));
 	EXPECT_EQ(23,  m(1, 2));
 }
+#endif
 
 TEST(SiLi, matrixView_det11) {
-	auto m = SiLi::make_mat({{11.}});
+	auto m = SiLi::Matrix<4, 4, double>({{11.}});
 	EXPECT_EQ(m.det(), 11.);
 }
 
 TEST(SiLi, matrixView_det22) {
-	auto m = SiLi::make_mat({{11., 12.},
+	auto m = SiLi::make_mat<double, 4, 4>({{11., 12.},
 	                         {21., 22.}});
 	EXPECT_EQ(m.det(), -10);
 }
 
 TEST(SiLi, matrixView_det33) {
-	auto m = SiLi::make_mat({{1, 0, 0},
+	auto m = SiLi::make_mat<double, 3, 3>({{1, 0, 0},
 	                         {0, 1, 0},
 	                         {0, 0, 1}});
 	EXPECT_EQ(m.det(), 1);
 }
 
 TEST(SiLi, matrixView_inv33) {
-	auto m = SiLi::make_mat({{1., 0., 0.},
+	auto m = SiLi::make_mat<double, 3, 3>({{1., 0., 0.},
 	                         {0., 1., 0.},
 	                         {0., 0., 1.}});
 
@@ -329,7 +267,7 @@ TEST(SiLi, matrixView_inv33) {
 }
 
 TEST(SiLi, matrixView_inv44) {
-	auto m = SiLi::make_mat({{1., 2., 3., 4.},
+	auto m = SiLi::make_mat<double, 4, 4>({{1., 2., 3., 4.},
 	                         {6., 6., 7., 8.},
 	                         {9., 10., 10., 12.},
 	                         {13., 14., 15., 15.}});
@@ -348,7 +286,7 @@ TEST(SiLi, matrixView_inv44) {
 }
 
 TEST(SiLi, matrixView_svd) {
-	auto m = SiLi::make_mat<double>({{1., 2.}, {2., 3.}});
+	auto m = SiLi::make_mat<double, 2, 2>({{1., 2.}, {2., 3.}});
 
 	auto svd = m.svd();
 	auto S = make_diag(svd.S);
@@ -362,7 +300,7 @@ TEST(SiLi, matrixView_svd) {
 }
 
 TEST(SiLi, matrixView_transposed) {
-	auto m = SiLi::make_mat({{11., 12.},
+	auto m = SiLi::make_mat<double, 2, 2>({{11., 12.},
 	                         {21., 22.}});
 	auto view = m.t();
 	EXPECT_EQ(view.det(), -10);
@@ -373,7 +311,7 @@ TEST(SiLi, matrixView_transposed) {
 }
 
 TEST(SiLi, matrixView_transposed2) {
-	auto m = SiLi::make_mat({{11., 12.},
+	auto m = SiLi::make_mat<double, 3, 2>({{11., 12.},
 	                         {21., 22.},
 	                         {31., 32.}});
 	auto view = m.t();
@@ -388,9 +326,9 @@ TEST(SiLi, matrixView_transposed2) {
 }
 
 TEST(SiLi, matrixView_add) {
-	auto m1 = SiLi::make_mat({{11., 12.},
+	auto m1 = SiLi::make_mat<double, 2, 2>({{11., 12.},
 	                          {21., 22.}});
-	auto m2 = SiLi::make_mat({{111., 112.},
+	auto m2 = SiLi::make_mat<double, 2, 2>({{111., 112.},
 	                          {121., 122.}});
 
 	auto m3 = m1 + m2;
@@ -401,9 +339,9 @@ TEST(SiLi, matrixView_add) {
 }
 
 TEST(SiLi, matrixView_sub) {
-	auto m1 = SiLi::make_mat({{11., 12.},
+	auto m1 = SiLi::make_mat<double, 2, 2>({{11., 12.},
 	                          {21., 22.}});
-	auto m2 = SiLi::make_mat({{111., 112.},
+	auto m2 = SiLi::make_mat<double, 2, 2>({{111., 112.},
 	                          {121., 122.}});
 
 	auto m3 = m2 - m1;
@@ -414,7 +352,7 @@ TEST(SiLi, matrixView_sub) {
 }
 
 TEST(SiLi, matrixView_scale) {
-	auto m1 = SiLi::make_mat({{11., 12.},
+	auto m1 = SiLi::make_mat<double, 2, 2>({{11., 12.},
 	                          {21., 22.}});
 
 	auto m3 = m1 * 2.;
@@ -424,7 +362,7 @@ TEST(SiLi, matrixView_scale) {
 	EXPECT_EQ(m3(1, 1), 44.);
 }
 TEST(SiLi, matrixView_neg) {
-	auto m1 = SiLi::make_mat({{11., 12.},
+	auto m1 = SiLi::make_mat<double, 2, 2>({{11., 12.},
 	                          {21., 22.}});
 
 	auto m3 = -m1;
@@ -434,7 +372,7 @@ TEST(SiLi, matrixView_neg) {
 	EXPECT_EQ(m3(1, 1), -22.);
 }
 TEST(SiLi, matrixView_diag) {
-	auto m = SiLi::make_mat({{11., 12.},
+	auto m = SiLi::make_mat<double, 3, 2>({{11., 12.},
 	                         {21., 22.},
 	                         {31., 32.}});
 
@@ -453,7 +391,7 @@ TEST(SiLi, matrixView_diag) {
 }
 
 TEST(SiLi, matrixView_diag2) {
-	auto m = SiLi::make_mat({{11., 12.},
+	auto m = SiLi::make_mat<double, 3, 2>({{11., 12.},
 	                         {21., 22.},
 	                         {31., 32.}});
 
@@ -464,7 +402,7 @@ TEST(SiLi, matrixView_diag2) {
 }
 
 TEST(SiLi, matrixView_make_diag) {
-	auto v = SiLi::make_mat({{11.},
+	auto v = SiLi::make_mat<double, 3, 1>({{11.},
 	                         {21.},
 	                         {31.}});
 	auto m = make_diag(v);
@@ -481,7 +419,7 @@ TEST(SiLi, matrixView_make_diag) {
 }
 
 TEST(SiLi, matrixView_element_wise_mul) {
-	auto v = SiLi::make_mat({{11.},
+	auto v = SiLi::make_mat<double, 3, 1>({{11.},
 	                         {21.},
 	                         {31.}});
 	auto m = make_eye<double, 3, 3>();
@@ -498,7 +436,7 @@ TEST(SiLi, matrixView_element_wise_mul) {
 	EXPECT_EQ(31., m(2, 2));
 }
 TEST(SiLi, matrixView_element_wise_mul2) {
-	auto v = SiLi::make_mat({{11.},
+	auto v = SiLi::make_mat<double, 3, 1>({{11.},
 	                         {21.},
 	                         {31.}});
 	auto m = make_eye<double, 3, 3>();
@@ -516,7 +454,7 @@ TEST(SiLi, matrixView_element_wise_mul2) {
 }
 
 TEST(SiLi, matrixView_swap) {
-	auto m = SiLi::make_mat({{11., 12.},
+	auto m = SiLi::make_mat<double, 3, 2>({{11., 12.},
 	                         {21., 22.},
 	                         {31., 32.}});
 
@@ -533,7 +471,7 @@ TEST(SiLi, matrixView_swap) {
 }
 
 TEST(SiLi, matrixView_rows) {
-	auto m = SiLi::make_mat({{11., 12.},
+	auto m = SiLi::make_mat<double, 3, 2>({{11., 12.},
 	                         {21., 22.},
 	                         {31., 32.}});
 
@@ -548,7 +486,7 @@ TEST(SiLi, matrixView_rows) {
 }
 
 TEST(SiLi, matrixView_cols) {
-	auto m = SiLi::make_mat({{11., 12.},
+	auto m = SiLi::make_mat<double, 3, 2>({{11., 12.},
 	                         {21., 22.},
 	                         {31., 32.}});
 
