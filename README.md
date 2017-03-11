@@ -13,4 +13,4 @@ A simple and very basic linear algebra library for c++ using _really_ little cod
 * svd decomposition
 * transpose (as a view)
 * diagnoal acces (as a view)
-* iteration over elements, rows or cols possible
+* iteration over elements, rows or columns possible
