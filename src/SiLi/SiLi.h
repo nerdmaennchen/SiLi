@@ -150,6 +150,12 @@ public:
 		return operator()(row, 0);
 	}
 
+	template<int _cols = tcols, typename std::enable_if<trows == _cols and trows == 1>::type* = nullptr>
+	operator T() const {
+		return (*this)(0, 0);
+	};
+
+
 
 	// matrix access
 	template<int subRows, int subCols>

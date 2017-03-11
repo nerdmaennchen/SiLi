@@ -498,3 +498,11 @@ TEST(SiLi, matrixView_cols) {
 	EXPECT_EQ(31., cols[0](2, 0));
 	EXPECT_EQ(32,  cols[1](2, 0));
 }
+TEST(SiLi, matrixView_single_element_to_double) {
+	auto m = SiLi::make_mat<double, 3, 1>({{1.},
+	                         {2.},
+	                         {3.}});
+
+	double s = m.t() * m;
+	EXPECT_EQ(14., s);
+}
