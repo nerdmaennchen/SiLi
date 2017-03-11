@@ -1,6 +1,6 @@
 
 #include <SiLi/SiLi.h>
-#include <SiLi/SiLi-iostream.h>
+#include <iostream>
 
 int main() {
 	auto b = SiLi::make_mat<double, 3, 2>({{1., 0.}, {0., 1.}, {1., 0.}}); // SiLi::Matrix<3, 2>

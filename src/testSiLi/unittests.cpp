@@ -1,5 +1,4 @@
 #include <SiLi/SiLi.h>
-#include <SiLi/SiLi-iostream.h>
 #include <gtest/gtest.h>
 
 using namespace SiLi;
