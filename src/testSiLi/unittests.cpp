@@ -232,12 +232,12 @@ TEST(SiLi, matrixView_make_matrix) {
 #endif
 
 TEST(SiLi, matrixView_det11) {
-	auto m = SiLi::Matrix<4, 4, double>({{11.}});
+	auto m = SiLi::Matrix<1, 1, double>({{11.}});
 	EXPECT_EQ(m.det(), 11.);
 }
 
 TEST(SiLi, matrixView_det22) {
-	auto m = SiLi::make_mat<double, 4, 4>({{11., 12.},
+	auto m = SiLi::make_mat<double, 2, 2>({{11., 12.},
 	                         {21., 22.}});
 	EXPECT_EQ(m.det(), -10);
 }
