@@ -128,25 +128,25 @@ public:
 
 	// read only element access not transposed
 	template<bool t = prop::transposed, typename std::enable_if<not t>::type* = nullptr>
-	auto operator()(int row, int col) const& -> T const& {
+	auto operator()(int row, int col) const -> T const& {
 		return *(cBasePtr + (row * prop::rowStride) + col + prop::offset*row);
 	}
 
 	// read only element access transposed
 	template<bool t = prop::transposed, typename std::enable_if<t>::type* = nullptr>
-	auto operator()(int row, int col) const& -> T const& {
+	auto operator()(int row, int col) const -> T const& {
 		return *(cBasePtr + (col * prop::rowStride) + row + prop::offset*col);
 	}
 
 	// read only element access not transposed
 	template<int _rows = Number<trows>::_number, typename std::enable_if<_rows == 1>::type* = nullptr>
-	auto operator()(int col) const& -> T const& {
+	auto operator()(int col) const -> T const& {
 		return operator()(0, col);
 	}
 
 	// read only element access not transposed
 	template<int _cols = Number<tcols>::_number, typename std::enable_if<_cols == 1 and trows != 1>::type* = nullptr>
-	auto operator()(int row) const& -> T const& {
+	auto operator()(int row) const -> T const& {
 		return operator()(row, 0);
 	}
 
@@ -250,56 +250,34 @@ public:
 	//MatrixView(MatrixView const& rhs) : basePtr(rhs.basePtr) {}
 
 	// pass through
-	auto operator()(int row, int col) const& -> T {
+	using MatrixView<trows, tcols, prop, T const>::operator();
+/*	auto operator()(int row, int col) const& -> T {
 		return Parent::operator()(row, col);
-	}
+	}*/
 
-	// lvalue element access
+	// value element access
 	template<bool t = prop::transposed, typename std::enable_if<not t>::type* = nullptr>
-	auto operator()(int row, int col) & -> T& {
+	auto operator()(int row, int col) -> T& {
 		return *(basePtr + (row * prop::rowStride) + col + row * prop::offset);
 	}
 
-	// lvalue element access
+	// value element access
 	template<bool t = prop::transposed, typename std::enable_if<t>::type* = nullptr>
-	auto operator()(int row, int col) & -> T& {
+	auto operator()(int row, int col) -> T& {
 		return *(basePtr + (col * prop::rowStride) + row + col * prop::offset);
-	}
-
-	// rvalue element access
-	template<bool t = prop::transposed, typename std::enable_if<not t>::type* = nullptr>
-	auto operator()(int row, int col) && -> T& {
-		return *(basePtr + (row * prop::rowStride) + col + row * prop::offset);
-	}
-
-	// rvalue element access
-	template<bool t = prop::transposed, typename std::enable_if<t>::type* = nullptr>
-	auto operator()(int row, int col) && -> T& {
-		return *(basePtr + (col * prop::rowStride) + row + col * prop::offset);
-	}
-
-	template<int _rows = Number<trows>::_number, typename std::enable_if<_rows == 1>::type* = nullptr>
-	auto operator()(int col) & -> T& {
-		return operator()(0, col);
-	}
-	template<int _cols = Number<tcols>::_number, typename std::enable_if<_cols == 1 and trows != 1>::type* = nullptr>
-	auto operator()(int row) & -> T& {
-		return operator()(row, 0);
 	}
 
 	// access if matrix is one dimensional
 	template<int _rows = Number<trows>::_number, typename std::enable_if<_rows == 1>::type* = nullptr>
-	auto operator()(int col) && -> T& {
+	auto operator()(int col) -> T& {
 		return operator()(0, col);
 	}
 
 	// access if matrix is one dimensional
 	template<int _cols = Number<tcols>::_number, typename std::enable_if<_cols == 1 and trows != 1>::type* = nullptr>
-	auto operator()(int row) && -> T& {
+	auto operator()(int row) -> T& {
 		return operator()(row, 0);
 	}
-
-
 
 	// view access
 	template<int subRows, int subCols>
@@ -340,7 +318,7 @@ public:
 	}
 
 	template <typename oProp>
-	auto operator+=(MatrixView<trows, tcols, oProp, T> const& rhs) -> MatrixView& {
+	auto operator+=(MatrixView<trows, tcols, oProp, T const> const& rhs) -> MatrixView& {
 		for (int row(0); row < trows; ++row) {
 			for (int col(0); col < tcols; ++col) {
 				(*this)(row, col) += rhs(row, col);
@@ -357,7 +335,7 @@ public:
 	}
 
 	template <typename oProp>
-	auto operator-=(MatrixView<trows, tcols, oProp, T> const& rhs) -> MatrixView& {
+	auto operator-=(MatrixView<trows, tcols, oProp, T const> const& rhs) -> MatrixView& {
 		for (int row(0); row < trows; ++row) {
 			for (int col(0); col < tcols; ++col) {
 				(*this)(row, col) -= rhs(row, col);
@@ -424,6 +402,7 @@ public:
 	}
 
 	// transposed view
+	using MatrixView<trows, tcols, prop, T const>::t;
 	auto t() -> MatrixView<tcols, trows, typename prop::Transposed, T> {
 		return MatrixView<tcols, trows, typename prop::Transposed, T> {basePtr};
 	}
