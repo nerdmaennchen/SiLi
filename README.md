@@ -1,5 +1,7 @@
 # SiLi
-A simple and very basic linear algebra library for c++ using _really_ little code 
+A simple and basic linear algebra library for c++ using little code.
+The best part ist: 
+It's all contained within a single header file and does not depend ony any 3rd party library. 
 
 # Features
 * Compile time matrix size checking
