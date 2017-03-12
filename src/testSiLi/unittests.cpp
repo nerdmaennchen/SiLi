@@ -453,6 +453,24 @@ TEST(SiLi, matrixView_transposed2) {
 	EXPECT_EQ(view(1, 2), 32.);
 }
 
+TEST(SiLi, matrixView_transposed_transposed) {
+	auto m = SiLi::make_mat<double, 2, 2>({{11., 12.},
+	                         {21., 22.}});
+	auto view = m.t().t();
+	EXPECT_NEAR(view.det(), -10., 1e-9);
+	EXPECT_EQ(view(0, 0), 11.);
+	EXPECT_EQ(view(1, 0), 21.);
+	EXPECT_EQ(view(0, 1), 12.);
+	EXPECT_EQ(view(1, 1), 22.);
+}
+
+TEST(SiLi, matrixView_implicit_cast_to_T) {
+	auto m = SiLi::make_mat<double, 1, 1>({{11.}});
+
+	double x = m;
+	EXPECT_EQ(x, 11.);
+}
+
 TEST(SiLi, matrixView_add) {
 	auto m1 = SiLi::make_mat<double, 2, 2>({{11., 12.},
 	                          {21., 22.}});
