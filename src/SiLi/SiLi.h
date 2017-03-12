@@ -1114,7 +1114,7 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 		auto oldI = columns[i].second;
 		sorted.U.view_col(i) = retValue.U.view_col(oldI);
 		sorted.S(i)          = retValue.S(oldI);
-		sorted.V.view_row(i) = retValue.V.view_row(oldI);
+		sorted.V.view_col(i) = retValue.V.view_col(oldI); // V is usually transposed
 	}
 
 	return sorted;
