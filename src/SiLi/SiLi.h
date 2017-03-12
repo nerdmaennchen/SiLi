@@ -197,10 +197,10 @@ public:
 
 
 	// read only iterator
-	auto begin() const -> MatrixIterator<MatrixView<trows, tcols, prop, T const>> {
+	auto begin() const -> MatrixIterator<MatrixView<trows, tcols, prop, T const> const> {
 		return {this};
 	}
-	auto end() const -> MatrixIterator<MatrixView<trows, tcols, prop, T const>> {
+	auto end() const -> MatrixIterator<MatrixView<trows, tcols, prop, T const> const> {
 		return {nullptr};
 	}
 
@@ -230,6 +230,19 @@ public:
 	auto diag() const -> MatrixView<(tcols < trows)?tcols:trows, 1, typename prop::Diag, T const> {
 		return MatrixView<(tcols < trows)?tcols:trows, 1, typename prop::Diag, T const> {cBasePtr};
 	}
+
+	auto normSqr() const -> T {
+		T ret{0.};
+		for (auto const& d : (*this)) {
+			ret += d*d;
+		}
+		return ret;
+	}
+	auto norm() const -> T {
+		using namespace std;
+		return sqrt(normSqr());
+	}
+
 
 	auto svd() const -> SVD<trows, tcols, T>;
 
