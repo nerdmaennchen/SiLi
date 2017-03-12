@@ -937,8 +937,6 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 	using namespace ::SiLi::detail;
 	using namespace std;
 	SVD<rows, cols, T> retValue;
-	int const m = rows;
-	int const n = cols;
 
 	auto& a = retValue.U;
 	a = _view;
@@ -950,14 +948,14 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 
 	std::array<T, cols> rv1;
 	g=scale=anorm=0.0; /* Householder reduction to bidiagonal form */
-	for (int i = 0; i < n; ++i) {
+	for (int i = 0; i < cols; ++i) {
 		l=i+2;
 		rv1[i] = scale*g;
 		g = s = scale = 0.0;
-		if (i < m) {
-			for (int k=i;k<m;k++) scale += abs(a(k, i));
+		if (i < rows) {
+			for (int k=i;k<rows;k++) scale += abs(a(k, i));
 			if (scale) {
-				for (int k=i;k<m;k++) {
+				for (int k=i;k<rows;k++) {
 					a(k, i) /= scale;
 					s += a(k, i)*a(k, i);
 				}
@@ -965,21 +963,21 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 				g = -signCopy(sqrt(s),f);
 				h=f*g-s;
 				a(i, i)=f-g;
-				for (int j=l;j<=n;j++) {
+				for (int j=l;j<=cols;j++) {
 					s=0;
-					for (int k=i;k<m;k++) s += a(k, i)*a(k, j-1);
+					for (int k=i;k<rows;k++) s += a(k, i)*a(k, j-1);
 					f=s/h;
-					for (int k=i;k<m;k++) a(k, j-1) += f*a(k, i);
+					for (int k=i;k<rows;k++) a(k, j-1) += f*a(k, i);
 				}
-				for (int k=i;k<m;k++) a(k, i) *= scale;
+				for (int k=i;k<rows;k++) a(k, i) *= scale;
 			}
 		}
 		w(i)=scale *g;
 		g=s=scale=0.0;
-		if (i < m && i+1 != n) {
-			for (int k=l;k<=n;k++) scale += abs(a(i, k-1));
+		if (i < rows && i+1 != cols) {
+			for (int k=l;k<=cols;k++) scale += abs(a(i, k-1));
 			if (scale) {
-				for (int k=l;k<=n;k++) {
+				for (int k=l;k<=cols;k++) {
 					a(i, k-1) /= scale;
 					s += a(i, k-1)*a(i, k-1);
 				}
@@ -987,52 +985,52 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 				g = -signCopy(sqrt(s),f);
 				h=f*g-s;
 				a(i, l-1)=f-g;
-				for (int k=l;k<=n;k++) rv1[k-1]=a(i, k-1)/h;
-				for (int j=l;j<=m;j++) {
+				for (int k=l;k<=cols;k++) rv1[k-1]=a(i, k-1)/h;
+				for (int j=l;j<=rows;j++) {
 					s=0.;
-					for (int k=l;k<=n;k++) s += a(j-1, k-1)*a(i, k-1);
-					for (int k=l;k<=n;k++) a(j-1, k-1) += s*rv1[k-1];
+					for (int k=l;k<=cols;k++) s += a(j-1, k-1)*a(i, k-1);
+					for (int k=l;k<=cols;k++) a(j-1, k-1) += s*rv1[k-1];
 				}
-				for (int k=l;k<=n;k++) a(i, k-1) *= scale;
+				for (int k=l;k<=cols;k++) a(i, k-1) *= scale;
 			}
 		}
 		anorm = max(anorm,(abs(w(i))+abs(rv1[i])));
 	}
-	for (int i=n;i>=1;i--) { /* Accumulation of right-hand transformations. */
-		if (i < n) {
+	for (int i=cols;i>=1;i--) { /* Accumulation of right-hand transformations. */
+		if (i < cols) {
 			if (g) {
-				for (int j=l;j<=n;j++) /* Double division to avoid possible underflow. */
+				for (int j=l;j<=cols;j++) /* Double division to avoid possible underflow. */
 					v(j-1, i-1)=(a(i-1, j-1)/a(i-1, l-1))/g;
-				for (int j=l;j<=n;j++) {
+				for (int j=l;j<=cols;j++) {
 					s=0.;
-					for (int k=l;k<=n;k++) s += a(i-1, k-1)*v(k-1, j-1);
-					for (int k=l;k<=n;k++) v(k-1, j-1) += s*v(k-1, i-1);
+					for (int k=l;k<=cols;k++) s += a(i-1, k-1)*v(k-1, j-1);
+					for (int k=l;k<=cols;k++) v(k-1, j-1) += s*v(k-1, i-1);
 				}
 			}
-			for (int j=l;j<=n;j++) v(i-1, j-1)=v(j-1, i-1)=0.0;
+			for (int j=l;j<=cols;j++) v(i-1, j-1)=v(j-1, i-1)=0.0;
 		}
 		v(i-1, i-1)=1.0;
 		g=rv1[i-1];
 		l=i;
 	}
-	for (int i=min(m,n);i>=1;i--) { /* Accumulation of left-hand transformations. */
+	for (int i=min(rows,cols);i>=1;i--) { /* Accumulation of left-hand transformations. */
 		l=i+1;
 		g=w(i-1);
-		for (int j=l;j<=n;j++) a(i-1, j-1)=0.0;
+		for (int j=l;j<=cols;j++) a(i-1, j-1)=0.0;
 		if (g) {
 			g=1.0/g;
-			for (int j=l;j<=n;j++) {
+			for (int j=l;j<=cols;j++) {
 				s = 0.;
-				for (int k=l;k<=m;k++) s += a(k-1, i-1)*a(k-1, j-1);
+				for (int k=l;k<=rows;k++) s += a(k-1, i-1)*a(k-1, j-1);
 				f=(s/a(i-1, i-1))*g;
-				for (int k=i;k<=m;k++) a(k-1, j-1) += f*a(k-1, i-1);
+				for (int k=i;k<=rows;k++) a(k-1, j-1) += f*a(k-1, i-1);
 			}
-			for (int j=i;j<=m;j++) a(j-1, i-1) *= g;
-		} else for (int j=i;j<=m;j++) a(j-1, i-1)=0.0;
+			for (int j=i;j<=rows;j++) a(j-1, i-1) *= g;
+		} else for (int j=i;j<=rows;j++) a(j-1, i-1)=0.0;
 		++a(i-1, i-1);
 	}
 	int nm;
-	for (int k=n;k>=1;k--) { /* Diagonalization of the bidiagonal form. */
+	for (int k=cols;k>=1;k--) { /* Diagonalization of the bidiagonal form. */
 		for (int its=1;its<=30;its++) {
 			int flag=1;
 			for (l=k;l>=1;l--) { /* Test for splitting. */
@@ -1056,7 +1054,7 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 					h=1.0/h;
 					c=g*h;
 					s = -f*h;
-					for (int j=1;j<=m;j++) {
+					for (int j=1;j<=rows;j++) {
 						y=a(j-1, nm-1);
 						z=a(j-1, i-1);
 						a(j-1, nm-1)=y*c+z*s;
@@ -1068,7 +1066,7 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 			if (l == k) { /* Convergence. */
 				if (z < 0.0) { /* Singular value is made nonnegative. */
 					w(k-1) = -z;
-					for (int j=1;j<=n;j++) v(j-1, k-1) = -v(j-1, k-1);
+					for (int j=1;j<=cols;j++) v(j-1, k-1) = -v(j-1, k-1);
 				}
 				break;
 			}
@@ -1098,7 +1096,7 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 				g = g*c-x*s;
 				h=y*s;
 				y *= c;
-				for (int jj=1;jj<=n;jj++) {
+				for (int jj=1;jj<=cols;jj++) {
 					x=v(jj-1, j-1);
 					z=v(jj-1, i-1);
 					v(jj-1, j-1)=x*c+z*s;
@@ -1113,7 +1111,7 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 				}
 				f=c*g+s*y;
 				x=c*y-s*g;
-				for (int jj=1;jj<=m;jj++) {
+				for (int jj=1;jj<=rows;jj++) {
 					y=a(jj-1, j-1);
 					z=a(jj-1, i-1);
 					a(jj-1, j-1)=y*c+z*s;
