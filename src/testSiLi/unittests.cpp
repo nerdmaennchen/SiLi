@@ -1,3 +1,5 @@
+#include <cmath>
+#include <cstdlib>
 #include <SiLi/SiLi.h>
 #include <gtest/gtest.h>
 
@@ -672,4 +674,23 @@ TEST(SiLi, matrixView_single_element_to_double) {
 
 	double s = m.t() * m;
 	EXPECT_EQ(14., s);
+}
+
+TEST(SiLi, matrixView_abs) {
+	auto m = SiLi::make_mat<double, 3, 4>({{-1., 2., -3., 4.},
+	                         {6., -6., 7., -8.},
+	                         {9., 10., -10., 12.}});
+	auto a = abs(m);
+	EXPECT_EQ(a(0, 0), 1.);
+	EXPECT_EQ(a(0, 1), 2.);
+	EXPECT_EQ(a(0, 2), 3.);
+	EXPECT_EQ(a(0, 3), 4.);
+	EXPECT_EQ(a(1, 0), 6.);
+	EXPECT_EQ(a(1, 1), 6.);
+	EXPECT_EQ(a(1, 2), 7.);
+	EXPECT_EQ(a(1, 3), 8.);
+	EXPECT_EQ(a(2, 0), 9.);
+	EXPECT_EQ(a(2, 1), 10.);
+	EXPECT_EQ(a(2, 2), 10.);
+	EXPECT_EQ(a(2, 3), 12.);
 }

@@ -245,10 +245,15 @@ public:
 		return std::sqrt(normSqr());
 	}
 
-
+	// compute svd so that *this = svd.U * make_diag(svd.S) * svd.V.t()
 	auto svd() const -> SVD<trows, tcols, T>;
 
+	// compute abs
+	auto abs() const -> Matrix<trows, tcols, T> {
+		return abs(*this);
+	}
 };
+
 template<int trows, int tcols, typename prop, typename T>
 class MatrixView<trows, tcols, prop, T> : public MatrixView<trows, tcols, prop, T const> {
 private:
@@ -1144,6 +1149,19 @@ auto MatrixView<trows, tcols, props, T const>::svd() const -> SVD<trows, tcols, 
 	return SiLi::svd(*this);
 }
 
+// compute abs global
+template<int trows, int tcols, typename props, typename T>
+auto abs(MatrixView<trows, tcols, props, T const> const& _view) -> Matrix<trows, tcols, T> {
+	Matrix<trows, tcols, T> ret;
+	for (int r(0); r < trows; ++r) {
+		for (int c(0); c < tcols; ++c) {
+			using std::abs;
+			ret(r, c) = abs(_view(r, c));
+		}
+	}
+
+	return ret;
+}
 
 /*
  * ostream
