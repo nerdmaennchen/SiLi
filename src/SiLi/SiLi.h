@@ -917,7 +917,7 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 	auto& w = retValue.S;
 	auto& v = retValue.V;
 
-	int j,l;
+	int l;
 	T anorm,c,f,g,h,s,scale,x,y,z;
 
 	std::array<T, cols> rv1;
@@ -937,7 +937,7 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 				g = -signCopy(std::sqrt(s),f);
 				h=f*g-s;
 				a(i-1, i-1)=f-g;
-				for (j=l;j<=n;j++) {
+				for (int j=l;j<=n;j++) {
 					s=0;
 					for (int k=i;k<=m;k++) s += a(k-1, i-1)*a(k-1, j-1);
 					f=s/h;
@@ -960,7 +960,7 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 				h=f*g-s;
 				a(i-1, l-1)=f-g;
 				for (int k=l;k<=n;k++) rv1[k-1]=a(i-1, k-1)/h;
-				for (j=l;j<=m;j++) {
+				for (int j=l;j<=m;j++) {
 					s=0.;
 					for (int k=l;k<=n;k++) s += a(j-1, k-1)*a(i-1, k-1);
 					for (int k=l;k<=n;k++) a(j-1, k-1) += s*rv1[k-1];
@@ -973,15 +973,15 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 	for (int i=n;i>=1;i--) { /* Accumulation of right-hand transformations. */
 		if (i < n) {
 			if (g) {
-				for (j=l;j<=n;j++) /* Double division to avoid possible underflow. */
+				for (int j=l;j<=n;j++) /* Double division to avoid possible underflow. */
 					v(j-1, i-1)=(a(i-1, j-1)/a(i-1, l-1))/g;
-				for (j=l;j<=n;j++) {
+				for (int j=l;j<=n;j++) {
 					s=0.;
 					for (int k=l;k<=n;k++) s += a(i-1, k-1)*v(k-1, j-1);
 					for (int k=l;k<=n;k++) v(k-1, j-1) += s*v(k-1, i-1);
 				}
 			}
-			for (j=l;j<=n;j++) v(i-1, j-1)=v(j-1, i-1)=0.0;
+			for (int j=l;j<=n;j++) v(i-1, j-1)=v(j-1, i-1)=0.0;
 		}
 		v(i-1, i-1)=1.0;
 		g=rv1[i-1];
@@ -990,17 +990,17 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 	for (int i=std::min(m,n);i>=1;i--) { /* Accumulation of left-hand transformations. */
 		l=i+1;
 		g=w(i-1);
-		for (j=l;j<=n;j++) a(i-1, j-1)=0.0;
+		for (int j=l;j<=n;j++) a(i-1, j-1)=0.0;
 		if (g) {
 			g=1.0/g;
-			for (j=l;j<=n;j++) {
+			for (int j=l;j<=n;j++) {
 				s = 0.;
 				for (int k=l;k<=m;k++) s += a(k-1, i-1)*a(k-1, j-1);
 				f=(s/a(i-1, i-1))*g;
 				for (int k=i;k<=m;k++) a(k-1, j-1) += f*a(k-1, i-1);
 			}
-			for (j=i;j<=m;j++) a(j-1, i-1) *= g;
-		} else for (j=i;j<=m;j++) a(j-1, i-1)=0.0;
+			for (int j=i;j<=m;j++) a(j-1, i-1) *= g;
+		} else for (int j=i;j<=m;j++) a(j-1, i-1)=0.0;
 		++a(i-1, i-1);
 	}
 	int nm;
@@ -1028,7 +1028,7 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 					h=1.0/h;
 					c=g*h;
 					s = -f*h;
-					for (j=1;j<=m;j++) {
+					for (int j=1;j<=m;j++) {
 						y=a(j-1, nm-1);
 						z=a(j-1, i-1);
 						a(j-1, nm-1)=y*c+z*s;
@@ -1040,7 +1040,7 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 			if (l == k) { /* Convergence. */
 				if (z < 0.0) { /* Singular value is made nonnegative. */
 					w(k-1) = -z;
-					for (j=1;j<=n;j++) v(j-1, k-1) = -v(j-1, k-1);
+					for (int j=1;j<=n;j++) v(j-1, k-1) = -v(j-1, k-1);
 				}
 				break;
 			}
@@ -1056,7 +1056,7 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 			g=pythag(f,1.0);
 			f=((x-z)*(x+z)+h*((y/(f+signCopy(g,f)))-h))/x;
 			c=s=1.0; /* Next QR transformation: */
-			for (j=l;j<=nm;j++) {
+			for (int j=l;j<=nm;j++) {
 				int i=j+1;
 				g=rv1[i-1];
 				y=w(i-1);
