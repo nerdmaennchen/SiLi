@@ -199,6 +199,24 @@ public:
 		return {nullptr};
 	}
 
+	template <int cols, typename oProp>
+	auto join_rows(MatrixView<trows, cols, oProp, T const> const& _view) const -> Matrix<trows, tcols+cols, T> {
+		Matrix<trows, tcols+cols, T> retValue;
+		retValue.view<trows, tcols>(0, 0)    = *this;
+		retValue.view<trows, cols>(0, tcols) = _view;
+		return retValue;
+	}
+
+	template <int rows, typename oProp>
+	auto join_cols(MatrixView<rows, tcols, oProp, T const> const& _view) const -> Matrix<trows+rows, tcols, T> {
+		Matrix<trows+rows, tcols, T> retValue;
+		retValue.view<trows, tcols>(0, 0)    = *this;
+		retValue.view<rows,  tcols>(trows, 0) = _view;
+		return retValue;
+	}
+
+
+
 	// negation
 	auto operator-() const -> Matrix<trows, tcols, T> {
 		Matrix<trows, tcols, T> ret;

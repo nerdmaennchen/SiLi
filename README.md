@@ -12,7 +12,11 @@ It's all contained within a single header file and does not depend ony any 3rd p
 * views on matrices
 * determinant
 * inverse
+* norm
 * svd decomposition
 * transpose (as a view)
 * diagnoal acces (as a view)
 * iteration over elements, rows or columns possible
+* join_rows()/join_cols()
+* isfinite
+* abs

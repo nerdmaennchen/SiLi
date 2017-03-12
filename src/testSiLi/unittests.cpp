@@ -725,3 +725,29 @@ TEST(SiLi, matrixView_isfinite_false) {
 	                         {9., 10., -10., 12.}});
 	EXPECT_EQ(isfinite(m), false);
 }
+
+TEST(SiLi, matrixView_join_rows) {
+	M<2, 1>  m1({{11.}, {21.}});
+	M<2, 2>  m2({{111., 112.}, {121., 122.}});
+
+	auto m3 = m1.join_rows(m2);
+	EXPECT_EQ(11., m3(0, 0));
+	EXPECT_EQ(21., m3(1, 0));
+	EXPECT_EQ(111., m3(0, 1));
+	EXPECT_EQ(112., m3(0, 2));
+	EXPECT_EQ(121., m3(1, 1));
+	EXPECT_EQ(122., m3(1, 2));
+}
+
+TEST(SiLi, matrixView_join_cols) {
+	M<1, 2>  m1({{11., 21.}});
+	M<2, 2>  m2({{111., 112.}, {121., 122.}});
+
+	auto m3 = m1.join_cols(m2);
+	EXPECT_EQ(11., m3(0, 0));
+	EXPECT_EQ(21., m3(0, 1));
+	EXPECT_EQ(111., m3(1, 0));
+	EXPECT_EQ(112., m3(1, 1));
+	EXPECT_EQ(121., m3(2, 0));
+	EXPECT_EQ(122., m3(2, 1));
+}
