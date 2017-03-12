@@ -524,7 +524,6 @@ auto make_diag(MatrixView<rows, 1, Prop, T const> const& _view) -> Matrix<rows, 
 	return retVal;
 }
 
-// matrix elementwise addition
 // only works for not overlaping views
 template<int rows, int cols, typename P1, typename P2, typename T>
 void swap(MatrixView<rows, cols, P1, T>& lhs, MatrixView<rows, cols, P2, T>& rhs) {
