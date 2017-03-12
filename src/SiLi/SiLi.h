@@ -6,8 +6,9 @@
 #include <iterator>
 #include <type_traits>
 
-namespace SiLi
-{
+namespace SiLi {
+
+using DefaultType = float;
 
 // This exception is thrown by svd() if the max iteration count is reached
 struct MaxIteration {};
@@ -22,7 +23,7 @@ struct Properties {
 	using Diag       = Properties<_rowStride, false, 1>;
 };
 
-template<int, int, typename T = float, typename... Args>
+template<int, int, typename T = DefaultType, typename... Args>
 class Matrix;
 
 template<int trows, int tcols, typename... Args>
@@ -163,16 +164,7 @@ public:
 	// matrix access
 	template<int subRows, int subCols>
 	auto mat(int startR, int startC) const -> Matrix<subRows, subCols, T> {
-		static_assert(subRows <= trows, "rows must be smaller or equal to the current view");
-		static_assert(subCols <= tcols, "cols must be smaller or equal to the current view");
-
-		Matrix<subRows, subCols, T> ret;
-		for (int r(startR); r < trows; ++r) {
-			for (int c(startC); c < tcols; ++c) {
-				ret(r-startR, c-startC) = (*this)(r, c);
-			}
-		}
-		return ret;
+		return view<subRows, subCols>(startR, startC);
 	}
 
 	// read only view access
@@ -525,25 +517,16 @@ public:
 
 		return *this;
 	}
-
-	auto operator=(Matrix&& other) -> Matrix& {
-		for (int r(0); r < rows; ++r) {
-			for (int c(0); c < cols; ++c) {
-				(*this)(r, c) = other(r, c);
-			}
-		}
-		return *this;
-	}
 };
 
 // create matrix
-template<typename T, int rows, int cols>
+template<int rows, int cols, typename T = DefaultType>
 auto make_mat(T const (&values)[rows][cols]) -> Matrix<rows, cols, T> {
 	return {values};
 }
 
 // create identity matrix
-template<typename T, int rows, int cols>
+template<int rows, int cols, typename T = DefaultType>
 auto make_eye() -> Matrix<rows, cols, T> {
 	Matrix<rows, cols, T> retVal(0);
 	retVal.diag() = 1.;
