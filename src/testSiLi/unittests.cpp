@@ -290,13 +290,63 @@ TEST(SiLi, matrixView_svd) {
 	auto svd = m.svd();
 	auto S = make_diag(svd.S);
 
-	auto re = svd.U * S * svd.V;
+	auto re = svd.U * S * svd.V.t();
+	EXPECT_NEAR(std::abs(svd.U.det()), 1., 1e-9);
+	EXPECT_NEAR(std::abs(svd.V.det()), 1., 1e-9);
 	EXPECT_NEAR(m(0, 0), re(0, 0), 1e-9);
 	EXPECT_NEAR(m(1, 0), re(1, 0), 1e-9);
 	EXPECT_NEAR(m(0, 1), re(0, 1), 1e-9);
 	EXPECT_NEAR(m(1, 1), re(1, 1), 1e-9);
-
 }
+
+TEST(SiLi, matrixView_svd2) {
+	auto m = SiLi::make_mat<double, 3, 3>({{1., 2., 3.}, {2., 3., 4.}, {4., 1., 10.}});
+
+	auto svd = m.svd();
+	auto S = make_diag(svd.S);
+
+	auto re = svd.U * S * svd.V.t();
+	EXPECT_NEAR(std::abs(svd.U.det()), 1., 1e-9);
+	EXPECT_NEAR(std::abs(svd.V.det()), 1., 1e-9);
+	EXPECT_NEAR(m(0, 0), re(0, 0), 1e-9);
+	EXPECT_NEAR(m(1, 0), re(1, 0), 1e-9);
+	EXPECT_NEAR(m(2, 0), re(2, 0), 1e-9);
+	EXPECT_NEAR(m(0, 1), re(0, 1), 1e-9);
+	EXPECT_NEAR(m(1, 1), re(1, 1), 1e-9);
+	EXPECT_NEAR(m(2, 1), re(2, 1), 1e-9);
+	EXPECT_NEAR(m(0, 2), re(0, 2), 1e-9);
+	EXPECT_NEAR(m(1, 2), re(1, 2), 1e-9);
+	EXPECT_NEAR(m(2, 2), re(2, 2), 1e-9);
+}
+
+TEST(SiLi, matrixView_svd3) {
+	auto m = SiLi::make_mat<double, 4, 4>({{1., 2., 3., 10.}, {2., 3., 4., 20.}, {4., -1., 10., 50.}, {10., -11., 12., -13.}});
+
+	auto svd = m.svd();
+	auto S = make_diag(svd.S);
+
+	auto re = svd.U * S * svd.V.t();
+	EXPECT_NEAR(std::abs(svd.U.det()), 1., 1e-9);
+	EXPECT_NEAR(std::abs(svd.V.det()), 1., 1e-9);
+	EXPECT_NEAR(m(0, 0), re(0, 0), 1e-9);
+	EXPECT_NEAR(m(1, 0), re(1, 0), 1e-9);
+	EXPECT_NEAR(m(2, 0), re(2, 0), 1e-9);
+	EXPECT_NEAR(m(3, 0), re(3, 0), 1e-9);
+	EXPECT_NEAR(m(0, 1), re(0, 1), 1e-9);
+	EXPECT_NEAR(m(1, 1), re(1, 1), 1e-9);
+	EXPECT_NEAR(m(2, 1), re(2, 1), 1e-9);
+	EXPECT_NEAR(m(3, 1), re(3, 1), 1e-9);
+	EXPECT_NEAR(m(0, 2), re(0, 2), 1e-9);
+	EXPECT_NEAR(m(1, 2), re(1, 2), 1e-9);
+	EXPECT_NEAR(m(2, 2), re(2, 2), 1e-9);
+	EXPECT_NEAR(m(3, 2), re(3, 2), 1e-9);
+	EXPECT_NEAR(m(0, 3), re(0, 3), 1e-9);
+	EXPECT_NEAR(m(1, 3), re(1, 3), 1e-9);
+	EXPECT_NEAR(m(2, 3), re(2, 3), 1e-9);
+	EXPECT_NEAR(m(3, 3), re(3, 3), 1e-9);
+}
+
+
 
 TEST(SiLi, matrixView_transposed) {
 	auto m = SiLi::make_mat<double, 2, 2>({{11., 12.},
