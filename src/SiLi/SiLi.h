@@ -949,7 +949,7 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 	std::array<T, cols> rv1;
 	g = scale = anorm = 0.0; /* Householder reduction to bidiagonal form */
 	for (int i = 0; i < cols; ++i) {
-		l = i+2;
+		l = i+1;
 		rv1[i] = scale*g;
 		g = s = scale = 0.0;
 		if (i < rows) {
@@ -963,39 +963,40 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 				g = -signCopy(sqrt(s),f);
 				h=f*g-s;
 				a(i, i)=f-g;
-				for (int j = l; j <= cols; j++) {
+				for (int j = l; j < cols; j++) {
 					s=0;
-					for (int k = i; k < rows; k++) s += a(k, i)*a(k, j-1);
+					for (int k = i; k < rows; k++) s += a(k, i)*a(k, j);
 					f=s/h;
-					for (int k = i; k < rows; k++) a(k, j-1) += f*a(k, i);
+					for (int k = i; k < rows; k++) a(k, j) += f*a(k, i);
 				}
 				for (int k = i; k < rows; k++) a(k, i) *= scale;
 			}
 		}
 		w(i) = scale *g;
 		g = s = scale = 0.0;
-		if (i < rows && i+1 != cols) {
-			for (int k = l; k <= cols; k++) scale += abs(a(i, k-1));
+		if (i < rows && i+1 < cols) {
+			for (int k = l; k < cols; k++) scale += abs(a(i, k));
 			if (scale) {
-				for (int k = l; k <= cols; k++) {
-					a(i, k-1) /= scale;
-					s += a(i, k-1)*a(i, k-1);
+				for (int k = l; k < cols; k++) {
+					a(i, k) /= scale;
+					s += a(i, k)*a(i, k);
 				}
-				f=a(i, l-1);
+				f=a(i, l);
 				g = -signCopy(sqrt(s),f);
 				h=f*g-s;
-				a(i, l-1)=f-g;
-				for (int k = l; k <= cols; k++) rv1[k-1]=a(i, k-1)/h;
-				for (int j = l; j <= rows; j++) {
+				a(i, l)=f-g;
+				for (int k = l; k < cols; k++) rv1[k]=a(i, k)/h;
+				for (int j = l; j < rows; j++) {
 					s=0.;
-					for (int k = l; k <= cols; k++) s += a(j-1, k-1)*a(i, k-1);
-					for (int k = l; k <= cols; k++) a(j-1, k-1) += s*rv1[k-1];
+					for (int k = l; k < cols; k++) s += a(j, k)*a(i, k);
+					for (int k = l; k < cols; k++) a(j, k) += s*rv1[k];
 				}
-				for (int k = l; k <= cols; k++) a(i, k-1) *= scale;
+				for (int k = l; k < cols; k++) a(i, k) *= scale;
 			}
 		}
 		anorm = max(anorm,(abs(w(i))+abs(rv1[i])));
 	}
+	l = cols+1;
 	for (int i = cols; i >= 1; i--) { /* Accumulation of right-hand transformations. */
 		if (i < cols) {
 			if (g) {
