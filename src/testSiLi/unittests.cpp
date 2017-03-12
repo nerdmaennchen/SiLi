@@ -328,22 +328,11 @@ TEST(SiLi, matrixView_svd4x4) {
 	auto re = svd.U * S * svd.V.t();
 	EXPECT_NEAR(std::abs(svd.U.det()), 1., 1e-9);
 	EXPECT_NEAR(std::abs(svd.V.det()), 1., 1e-9);
-	EXPECT_NEAR(m(0, 0), re(0, 0), 1e-9);
-	EXPECT_NEAR(m(1, 0), re(1, 0), 1e-9);
-	EXPECT_NEAR(m(2, 0), re(2, 0), 1e-9);
-	EXPECT_NEAR(m(3, 0), re(3, 0), 1e-9);
-	EXPECT_NEAR(m(0, 1), re(0, 1), 1e-9);
-	EXPECT_NEAR(m(1, 1), re(1, 1), 1e-9);
-	EXPECT_NEAR(m(2, 1), re(2, 1), 1e-9);
-	EXPECT_NEAR(m(3, 1), re(3, 1), 1e-9);
-	EXPECT_NEAR(m(0, 2), re(0, 2), 1e-9);
-	EXPECT_NEAR(m(1, 2), re(1, 2), 1e-9);
-	EXPECT_NEAR(m(2, 2), re(2, 2), 1e-9);
-	EXPECT_NEAR(m(3, 2), re(3, 2), 1e-9);
-	EXPECT_NEAR(m(0, 3), re(0, 3), 1e-9);
-	EXPECT_NEAR(m(1, 3), re(1, 3), 1e-9);
-	EXPECT_NEAR(m(2, 3), re(2, 3), 1e-9);
-	EXPECT_NEAR(m(3, 3), re(3, 3), 1e-9);
+	for (int row(0); row<m.num_rows(); ++row) {
+		for (int col(0); col<m.num_cols(); ++col) {
+			EXPECT_NEAR(m(row, col), re(row, col), 1e-9);
+		}
+	}
 }
 
 TEST(SiLi, matrixView_svd5x5) {
@@ -355,34 +344,69 @@ TEST(SiLi, matrixView_svd5x5) {
 	auto re = svd.U * S * svd.V.t();
 	EXPECT_NEAR(std::abs(svd.U.det()), 1., 1e-9);
 	EXPECT_NEAR(std::abs(svd.V.det()), 1., 1e-9);
-	EXPECT_NEAR(m(0, 0), re(0, 0), 1e-9);
-	EXPECT_NEAR(m(1, 0), re(1, 0), 1e-9);
-	EXPECT_NEAR(m(2, 0), re(2, 0), 1e-9);
-	EXPECT_NEAR(m(3, 0), re(3, 0), 1e-9);
-	EXPECT_NEAR(m(4, 0), re(4, 0), 1e-9);
-	EXPECT_NEAR(m(0, 1), re(0, 1), 1e-9);
-	EXPECT_NEAR(m(1, 1), re(1, 1), 1e-9);
-	EXPECT_NEAR(m(2, 1), re(2, 1), 1e-9);
-	EXPECT_NEAR(m(3, 1), re(3, 1), 1e-9);
-	EXPECT_NEAR(m(4, 1), re(4, 1), 1e-9);
-	EXPECT_NEAR(m(0, 2), re(0, 2), 1e-9);
-	EXPECT_NEAR(m(1, 2), re(1, 2), 1e-9);
-	EXPECT_NEAR(m(2, 2), re(2, 2), 1e-9);
-	EXPECT_NEAR(m(3, 2), re(3, 2), 1e-9);
-	EXPECT_NEAR(m(4, 2), re(4, 2), 1e-9);
-	EXPECT_NEAR(m(0, 3), re(0, 3), 1e-9);
-	EXPECT_NEAR(m(1, 3), re(1, 3), 1e-9);
-	EXPECT_NEAR(m(2, 3), re(2, 3), 1e-9);
-	EXPECT_NEAR(m(3, 3), re(3, 3), 1e-9);
-	EXPECT_NEAR(m(4, 3), re(4, 3), 1e-9);
-	EXPECT_NEAR(m(0, 4), re(0, 4), 1e-9);
-	EXPECT_NEAR(m(1, 4), re(1, 4), 1e-9);
-	EXPECT_NEAR(m(2, 4), re(2, 4), 1e-9);
-	EXPECT_NEAR(m(3, 4), re(3, 4), 1e-9);
-	EXPECT_NEAR(m(4, 4), re(4, 4), 1e-9);
+	for (int row(0); row<m.num_rows(); ++row) {
+		for (int col(0); col<m.num_cols(); ++col) {
+			EXPECT_NEAR(m(row, col), re(row, col), 1e-9);
+		}
+	}
 }
 
 
+TEST(SiLi, svd_random) {
+	auto m = SiLi::make_mat<double, 4, 5>({
+			 {-0.050500,  -0.978799,   0.165052,   1.532855,  -0.848506},
+			 {-1.569933,   0.264375,  -0.156239,  -0.590324,   0.318738},
+			 {-1.046523,  -0.668761,  -0.304812,  -0.026862,   1.034121},
+			 {-0.414202,   0.031721,  -1.523946,  -0.423158,  -0.925514}
+	});
+
+	auto U_true = SiLi::make_mat<double, 4, 4>({
+		{ 0.5820622,  -0.4900696,   0.6054104,   0.2334813},
+		{-0.6432321,  -0.0995143,   0.2632539,   0.7120722},
+		{-0.4258450,   0.0033398,   0.6534692,  -0.6257978},
+		{-0.2571226,  -0.8659778,  -0.3703425,  -0.2163721}
+	});
+	auto S_true = SiLi::make_mat<double, 4, 5>({
+		   {2.41447,         0,         0,         0,         0},
+		   {      0,   1.88627,         0,         0,         0},
+		   {      0,         0,   1.80314,         0,         0},
+		   {      0,         0,         0,   0.81464,         0}
+	});
+	auto V_true = SiLi::make_mat<double, 5, 5>({
+		{ 0.634753,   0.284251,  -0.540357,  -0.472804,  -0.027580},
+		{-0.191820,   0.224606,  -0.538916,   0.455870,   0.643824},
+		{ 0.297461,   0.664458,   0.235140,   0.549661,  -0.335551},
+		{ 0.576595,  -0.172883,   0.505653,   0.056356,   0.615458},
+		{-0.373295,   0.630365,   0.326508,  -0.513163,   0.305529}
+	});
+
+	auto svd = m.svd();
+	auto S = make_diag(svd.S);
+
+	auto re = svd.U * S * svd.V;
+	for (int row(0); row<m.num_rows(); ++row) {
+		for (int col(0); col<m.num_cols(); ++col) {
+			EXPECT_NEAR(m(row, col), re(row, col), 1e-9);
+		}
+	}
+
+	for (int row(0); row<U_true.num_rows(); ++row) {
+		for (int col(0); col<U_true.num_cols(); ++col) {
+			EXPECT_NEAR(svd.U(row, col), U_true(row, col), 1e-5);
+		}
+	}
+	for (int row(0); row<S_true.num_rows(); ++row) {
+		for (int col(0); col<S_true.num_cols(); ++col) {
+			EXPECT_NEAR(S(row, col), S_true(row, col), 1e-5);
+		}
+	}
+	for (int row(0); row<V_true.num_rows(); ++row) {
+		for (int col(0); col<V_true.num_cols(); ++col) {
+			EXPECT_NEAR(svd.V(row, col), V_true(row, col), 1e-5);
+		}
+	}
+
+}
 
 
 TEST(SiLi, matrixView_transposed) {
