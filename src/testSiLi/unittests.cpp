@@ -528,6 +528,46 @@ TEST(SiLi, matrixView_make_diag) {
 	EXPECT_EQ(31., m(2, 2));
 }
 
+TEST(SiLi, matrixView_make_diag2) {
+	auto v = SiLi::make_mat<double, 3, 1>({{11.},
+	                         {21.},
+	                         {31.}});
+	auto m = make_diag<3,4>(v);
+
+	EXPECT_EQ(11., m(0, 0));
+	EXPECT_EQ(0.,  m(0, 1));
+	EXPECT_EQ(0.,  m(0, 2));
+	EXPECT_EQ(0.,  m(0, 3));
+	EXPECT_EQ(0.,  m(1, 0));
+	EXPECT_EQ(21., m(1, 1));
+	EXPECT_EQ(0.,  m(1, 2));
+	EXPECT_EQ(0.,  m(1, 3));
+	EXPECT_EQ(0.,  m(2, 0));
+	EXPECT_EQ(0.,  m(2, 1));
+	EXPECT_EQ(31., m(2, 2));
+	EXPECT_EQ(0.,  m(2, 3));
+}
+
+TEST(SiLi, matrixView_make_diag3) {
+	auto v = SiLi::make_mat<double, 3, 1>({{11.},
+	                         {21.},
+	                         {31.}});
+	auto m = make_diag<4,3>(v);
+
+	EXPECT_EQ(11., m(0, 0));
+	EXPECT_EQ(0.,  m(0, 1));
+	EXPECT_EQ(0.,  m(0, 2));
+	EXPECT_EQ(0.,  m(1, 0));
+	EXPECT_EQ(21., m(1, 1));
+	EXPECT_EQ(0.,  m(1, 2));
+	EXPECT_EQ(0.,  m(2, 0));
+	EXPECT_EQ(0.,  m(2, 1));
+	EXPECT_EQ(31., m(2, 2));
+	EXPECT_EQ(0.,  m(3, 0));
+	EXPECT_EQ(0.,  m(3, 1));
+	EXPECT_EQ(0.,  m(3, 2));
+}
+
 TEST(SiLi, matrixView_element_wise_mul) {
 	auto v = SiLi::make_mat<double, 3, 1>({{11.},
 	                         {21.},
