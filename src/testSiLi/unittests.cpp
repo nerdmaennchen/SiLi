@@ -712,3 +712,16 @@ TEST(SiLi, matrixView_abs) {
 	EXPECT_EQ(a(2, 2), 10.);
 	EXPECT_EQ(a(2, 3), 12.);
 }
+
+TEST(SiLi, matrixView_isfinite_true) {
+	auto m = SiLi::make_mat<double, 3, 4>({{-1., 2., -3., 4.},
+	                         {6., -6., 7., -8.},
+	                         {9., 10., -10., 12.}});
+	EXPECT_EQ(isfinite(m), true);
+}
+TEST(SiLi, matrixView_isfinite_false) {
+	auto m = SiLi::make_mat<double, 3, 4>({{-1., 2., -3., 4.},
+	                         {6., -6./0., 7., -8.},
+	                         {9., 10., -10., 12.}});
+	EXPECT_EQ(isfinite(m), false);
+}

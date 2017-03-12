@@ -256,6 +256,16 @@ public:
 	auto abs() const -> Matrix<trows, tcols, T> {
 		return abs(*this);
 	}
+
+	auto isfinite() const -> bool {
+		using std::isfinite;
+		for (auto const& d : (*this)) {
+			if (not isfinite(d)) {
+				return false;
+			}
+		}
+		return true;
+	}
 };
 
 template<int trows, int tcols, typename prop, typename T>
@@ -1165,6 +1175,11 @@ auto abs(MatrixView<trows, tcols, props, T const> const& _view) -> Matrix<trows,
 	}
 
 	return ret;
+}
+
+template <int trows, int tcols, typename props, typename T>
+auto isfinite(MatrixView<trows, tcols, props, T const> const& _view) -> bool {
+	return _view.isfinite();
 }
 
 /*
