@@ -538,7 +538,6 @@ auto make_diag(MatrixView<rows, 1, Prop, T const> const& _view) -> Matrix<rows, 
 	retVal.diag() = _view;
 	return retVal;
 }
-
 template<int rows, int cols, typename T, typename Prop>
 auto make_diag(MatrixView<rows, 1, Prop, T const> const& _view) -> Matrix<rows, cols, T> {
 	static_assert(cols >= rows, "cannot build a smaller diagonal matrix than the input vector size");
@@ -903,21 +902,23 @@ auto operator*(T const& lhs, MatrixView<rows, cols, Props, T const> const& rhs) 
 namespace detail {
 template <typename T1, typename T2>
 auto signCopy(T1 const& t1, T2 const& t2) -> T1 {
-	return (t2 >= 0.0) ? std::abs(t1) : -std::abs(t1);
+	using namespace std;
+	return (t2 >= 0.0) ? abs(t1) : -abs(t1);
 }
 
 template <typename T>
 auto pythag(T a, T b) -> T {
 /* compute (a2 + b2)^1/2 without destructive underflow or overflow */
-	a = std::abs(a);
-	b = std::abs(b);
+	using namespace std;
+	a = abs(a);
+	b = abs(b);
 	if (a > b) {
-		return a*std::sqrt(1.0 + (b/a) * (b/a));
+		return a*sqrt(1.0 + (b/a) * (b/a));
 	}
 	else if (b == 0.0) {
 		return 0.;
 	} else {
-		return b*std::sqrt(1.0+(a/b)*(a/b));
+		return b*sqrt(1.0+(a/b)*(a/b));
 	}
 }
 }
@@ -925,6 +926,7 @@ auto pythag(T a, T b) -> T {
 template <int rows, int cols, typename Props, typename T>
 auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols, T> {
 	using namespace ::SiLi::detail;
+	using namespace std;
 	SVD<rows, cols, T> retValue;
 	int const m = rows;
 	int const n = cols;
@@ -944,14 +946,14 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 		rv1[i-1] = scale*g;
 		g = s = scale = 0.0;
 		if (i <= m) {
-			for (int k=i;k<=m;k++) scale += std::abs(a(k-1, i-1));
+			for (int k=i;k<=m;k++) scale += abs(a(k-1, i-1));
 			if (scale) {
 				for (int k=i;k<=m;k++) {
 					a(k-1, i-1) /= scale;
 					s += a(k-1, i-1)*a(k-1, i-1);
 				}
 				f=a(i-1, i-1);
-				g = -signCopy(std::sqrt(s),f);
+				g = -signCopy(sqrt(s),f);
 				h=f*g-s;
 				a(i-1, i-1)=f-g;
 				for (int j=l;j<=n;j++) {
@@ -966,14 +968,14 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 		w(i-1)=scale *g;
 		g=s=scale=0.0;
 		if (i <= m && i != n) {
-			for (int k=l;k<=n;k++) scale += std::abs(a(i-1, k-1));
+			for (int k=l;k<=n;k++) scale += abs(a(i-1, k-1));
 			if (scale) {
 				for (int k=l;k<=n;k++) {
 					a(i-1, k-1) /= scale;
 					s += a(i-1, k-1)*a(i-1, k-1);
 				}
 				f=a(i-1, l-1);
-				g = -signCopy(std::sqrt(s),f);
+				g = -signCopy(sqrt(s),f);
 				h=f*g-s;
 				a(i-1, l-1)=f-g;
 				for (int k=l;k<=n;k++) rv1[k-1]=a(i-1, k-1)/h;
@@ -985,7 +987,7 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 				for (int k=l;k<=n;k++) a(i-1, k-1) *= scale;
 			}
 		}
-		anorm = std::max(anorm,(std::abs(w(i-1))+std::abs(rv1[i-1])));
+		anorm = max(anorm,(abs(w(i-1))+abs(rv1[i-1])));
 	}
 	for (int i=n;i>=1;i--) { /* Accumulation of right-hand transformations. */
 		if (i < n) {
@@ -1004,7 +1006,7 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 		g=rv1[i-1];
 		l=i;
 	}
-	for (int i=std::min(m,n);i>=1;i--) { /* Accumulation of left-hand transformations. */
+	for (int i=min(m,n);i>=1;i--) { /* Accumulation of left-hand transformations. */
 		l=i+1;
 		g=w(i-1);
 		for (int j=l;j<=n;j++) a(i-1, j-1)=0.0;
@@ -1026,11 +1028,11 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 			int flag=1;
 			for (l=k;l>=1;l--) { /* Test for splitting. */
 				nm=l-1; /* Note that rv1[0] is always zero. */
-				if ((T)(std::abs(rv1[l-1])+anorm) == anorm) {
+				if ((T)(abs(rv1[l-1])+anorm) == anorm) {
 					flag=0;
 					break;
 				}
-				if ((T)(std::abs(w(nm-1))+anorm) == anorm) break;
+				if ((T)(abs(w(nm-1))+anorm) == anorm) break;
 			}
 			if (flag) {
 				c=0.0; /* Cancellation of rv1[l-1], if l > 1. */
@@ -1062,7 +1064,7 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 				break;
 			}
 			if (its == 30) {
-				throw std::runtime_error("no convergence after many svd iterations");
+				throw runtime_error("no convergence after many svd iterations");
 			}
 			x=w(l-1); /* Shift from bottom 2-by-2 minor. */
 			nm=k-1;
@@ -1117,12 +1119,11 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 
 	// sort by eigenvalues
 	// slow sorting
-
 	std::array<std::pair<T, int>, cols> columns;
 	for (int i(0); i < cols; ++i) {
 		columns[i] = std::make_pair(w(i), i);
 	}
-	std::sort(columns.begin(), columns.end(), [](std::pair<T, int> const& p1, std::pair<T, int> const& p2) {
+	sort(columns.begin(), columns.end(), [](std::pair<T, int> const& p1, std::pair<T, int> const& p2) {
 		return p1.first > p2.first;
 	});
 
