@@ -374,17 +374,19 @@ TEST(SiLi, svd_random) {
 			 {-0.414202,   0.031721,  -1.523946,  -0.423158,  -0.925514}
 	});
 
-	auto U_true = SiLi::make_mat<double, 4, 4>({
-		{ 0.5820622,  -0.4900696,   0.6054104,   0.2334813},
-		{-0.6432321,  -0.0995143,   0.2632539,   0.7120722},
-		{-0.4258450,   0.0033398,   0.6534692,  -0.6257978},
-		{-0.2571226,  -0.8659778,  -0.3703425,  -0.2163721}
+	auto U_true = SiLi::make_mat<double, 4, 5>({
+		{ 0.5820622,  -0.4900696,   0.6054104,   0.2334813, 0.},
+		{-0.6432321,  -0.0995143,   0.2632539,   0.7120722, 0.},
+		{-0.4258450,   0.0033398,   0.6534692,  -0.6257978, 0.},
+		{-0.2571226,  -0.8659778,  -0.3703425,  -0.2163721, 0.}
 	});
-	auto S_true = SiLi::make_mat<double, 4, 5>({
+	auto S_true = SiLi::make_mat<double, 5, 5>({
 		   {2.41447,         0,         0,         0,         0},
 		   {      0,   1.88627,         0,         0,         0},
 		   {      0,         0,   1.80314,         0,         0},
-		   {      0,         0,         0,   0.81464,         0}
+		   {      0,         0,         0,   0.81464,         0},
+		   {      0,         0,         0,         0,         0}
+
 	});
 	auto V_true = SiLi::make_mat<double, 5, 5>({
 		{ 0.634753,   0.284251,  -0.540357,  -0.472804,  -0.027580},
@@ -397,29 +399,29 @@ TEST(SiLi, svd_random) {
 	auto svd = m.svd();
 	auto S = make_diag(svd.S);
 
-	auto re = svd.U * S * svd.V;
-	for (int row(0); row<m.num_rows(); ++row) {
-		for (int col(0); col<m.num_cols(); ++col) {
-			EXPECT_NEAR(m(row, col), re(row, col), 1e-9);
-		}
-	}
+	auto re = svd.U * S * svd.V.t();
+	auto diff = m - re;;
+	EXPECT_NEAR(0., diff.norm(), 1e-9);
+	auto Udet = svd.U.view<4, 4>(0, 0).det();
+	EXPECT_NEAR(1., std::abs(Udet), 1e-9);
+	EXPECT_NEAR(1., std::abs(svd.V.det()), 1e-9);
+
 
 	for (int row(0); row<U_true.num_rows(); ++row) {
 		for (int col(0); col<U_true.num_cols(); ++col) {
-			EXPECT_NEAR(svd.U(row, col), U_true(row, col), 1e-5);
+			EXPECT_NEAR(std::abs(svd.U(row, col)), std::abs(U_true(row, col)), 1e-5);
 		}
 	}
 	for (int row(0); row<S_true.num_rows(); ++row) {
 		for (int col(0); col<S_true.num_cols(); ++col) {
-			EXPECT_NEAR(S(row, col), S_true(row, col), 1e-5);
+			EXPECT_NEAR(std::abs(S(row, col)), std::abs(S_true(row, col)), 1e-5);
 		}
 	}
 	for (int row(0); row<V_true.num_rows(); ++row) {
 		for (int col(0); col<V_true.num_cols(); ++col) {
-			EXPECT_NEAR(svd.V(row, col), V_true(row, col), 1e-5);
+			EXPECT_NEAR(std::abs(svd.V(row, col)), std::abs(V_true(row, col)), 1e-5);
 		}
 	}
-
 }
 
 
