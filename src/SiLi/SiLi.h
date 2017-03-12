@@ -941,53 +941,53 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 
 	std::array<T, cols> rv1;
 	g=scale=anorm=0.0; /* Householder reduction to bidiagonal form */
-	for (int i = 1; i <= n; ++i) {
-		l=i+1;
-		rv1[i-1] = scale*g;
+	for (int i = 0; i < n; ++i) {
+		l=i+2;
+		rv1[i] = scale*g;
 		g = s = scale = 0.0;
-		if (i <= m) {
-			for (int k=i;k<=m;k++) scale += abs(a(k-1, i-1));
+		if (i < m) {
+			for (int k=i;k<m;k++) scale += abs(a(k, i));
 			if (scale) {
-				for (int k=i;k<=m;k++) {
-					a(k-1, i-1) /= scale;
-					s += a(k-1, i-1)*a(k-1, i-1);
+				for (int k=i;k<m;k++) {
+					a(k, i) /= scale;
+					s += a(k, i)*a(k, i);
 				}
-				f=a(i-1, i-1);
+				f=a(i, i);
 				g = -signCopy(sqrt(s),f);
 				h=f*g-s;
-				a(i-1, i-1)=f-g;
+				a(i, i)=f-g;
 				for (int j=l;j<=n;j++) {
 					s=0;
-					for (int k=i;k<=m;k++) s += a(k-1, i-1)*a(k-1, j-1);
+					for (int k=i;k<m;k++) s += a(k, i)*a(k, j-1);
 					f=s/h;
-					for (int k=i;k<=m;k++) a(k-1, j-1) += f*a(k-1, i-1);
+					for (int k=i;k<m;k++) a(k, j-1) += f*a(k, i);
 				}
-				for (int k=i;k<=m;k++) a(k-1, i-1) *= scale;
+				for (int k=i;k<m;k++) a(k, i) *= scale;
 			}
 		}
-		w(i-1)=scale *g;
+		w(i)=scale *g;
 		g=s=scale=0.0;
-		if (i <= m && i != n) {
-			for (int k=l;k<=n;k++) scale += abs(a(i-1, k-1));
+		if (i < m && i+1 != n) {
+			for (int k=l;k<=n;k++) scale += abs(a(i, k-1));
 			if (scale) {
 				for (int k=l;k<=n;k++) {
-					a(i-1, k-1) /= scale;
-					s += a(i-1, k-1)*a(i-1, k-1);
+					a(i, k-1) /= scale;
+					s += a(i, k-1)*a(i, k-1);
 				}
-				f=a(i-1, l-1);
+				f=a(i, l-1);
 				g = -signCopy(sqrt(s),f);
 				h=f*g-s;
-				a(i-1, l-1)=f-g;
-				for (int k=l;k<=n;k++) rv1[k-1]=a(i-1, k-1)/h;
+				a(i, l-1)=f-g;
+				for (int k=l;k<=n;k++) rv1[k-1]=a(i, k-1)/h;
 				for (int j=l;j<=m;j++) {
 					s=0.;
-					for (int k=l;k<=n;k++) s += a(j-1, k-1)*a(i-1, k-1);
+					for (int k=l;k<=n;k++) s += a(j-1, k-1)*a(i, k-1);
 					for (int k=l;k<=n;k++) a(j-1, k-1) += s*rv1[k-1];
 				}
-				for (int k=l;k<=n;k++) a(i-1, k-1) *= scale;
+				for (int k=l;k<=n;k++) a(i, k-1) *= scale;
 			}
 		}
-		anorm = max(anorm,(abs(w(i-1))+abs(rv1[i-1])));
+		anorm = max(anorm,(abs(w(i))+abs(rv1[i])));
 	}
 	for (int i=n;i>=1;i--) { /* Accumulation of right-hand transformations. */
 		if (i < n) {
