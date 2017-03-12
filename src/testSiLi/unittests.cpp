@@ -239,7 +239,7 @@ TEST(SiLi, matrixView_det11) {
 TEST(SiLi, matrixView_det22) {
 	auto m = SiLi::make_mat<double, 2, 2>({{11., 12.},
 	                         {21., 22.}});
-	EXPECT_EQ(m.det(), -10);
+	EXPECT_NEAR(m.det(), -10, 1e-9);
 }
 
 TEST(SiLi, matrixView_det33) {
@@ -248,6 +248,20 @@ TEST(SiLi, matrixView_det33) {
 	                         {0, 0, 1}});
 	EXPECT_EQ(m.det(), 1);
 }
+
+TEST(SiLi, matrixView_det33_b) {
+	auto m = SiLi::make_mat<double, 3, 3>({{1., 2., 3.}, {2., 3., 4.}, {4., 1., 10.}});
+
+	EXPECT_NEAR(m.det(), -12., 1e-9);
+}
+
+TEST(SiLi, matrixView_det44) {
+	auto m = SiLi::make_mat<double, 4, 4>({{1., 2., 3., 10.}, {2., 3., 4., 20.}, {4., -1., 10., 50.}, {10., -11., 12., -13.}});
+
+	EXPECT_NEAR(m.det(), 2248., 1e-9);
+}
+
+
 
 TEST(SiLi, matrixView_inv33) {
 	auto m = SiLi::make_mat<double, 3, 3>({{1., 0., 0.},
@@ -413,7 +427,7 @@ TEST(SiLi, matrixView_transposed) {
 	auto m = SiLi::make_mat<double, 2, 2>({{11., 12.},
 	                         {21., 22.}});
 	auto view = m.t();
-	EXPECT_EQ(view.det(), -10);
+	EXPECT_NEAR(view.det(), -10., 1e-9);
 	EXPECT_EQ(view(0, 0), 11.);
 	EXPECT_EQ(view(1, 0), 12.);
 	EXPECT_EQ(view(0, 1), 21.);

@@ -568,7 +568,7 @@ void swap(MatrixView<rows, cols, P1, T>& lhs, MatrixView<rows, cols, P2, T>& rhs
 // lu decomposition, returns L value
 template <int rows, int cols, typename Props, typename T>
 auto luDecomposition_L(MatrixView<rows, cols, Props, T const> const& _mat) -> Matrix<rows, cols, T> {
-	Matrix<rows, cols, T> L;
+	Matrix<rows, cols, T> L{0};
 
 	for (int k=0; k<rows; ++k) {
 		auto kRow = L.view_row(k);
@@ -616,7 +616,7 @@ template <int rows, int cols, typename Props, typename T>
 auto adjugateMat(MatrixView<rows, cols, Props, T const> const& _view) -> Matrix<rows, cols, T> {
 	Matrix<rows, cols, T> retMat;
 	if (cols == 1) {
-		return _view;
+		return {1};
 	}
 
 	for(int i = 0; i < rows; ++i) {
