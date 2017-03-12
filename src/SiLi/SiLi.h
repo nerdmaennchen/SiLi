@@ -9,6 +9,9 @@
 namespace SiLi
 {
 
+// This exception is thrown by svd() if the max iteration count is reached
+struct MaxIteration {};
+
 template<int _rowStride, bool _transposed = false, int _offset=0>
 struct Properties {
 	static constexpr int  rowStride  {_rowStride};
@@ -246,6 +249,7 @@ public:
 	}
 
 	// compute svd so that *this = svd.U * make_diag(svd.S) * svd.V.t()
+	// Will throw SiLi::MaxIteration if maximum of iteration is reached
 	auto svd() const -> SVD<trows, tcols, T>;
 
 	// compute abs
@@ -1069,7 +1073,7 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 				break;
 			}
 			if (its == 30) {
-				throw runtime_error("no convergence after many svd iterations");
+				throw MaxIteration{};
 			}
 			x=w(l-1); /* Shift from bottom 2-by-2 minor. */
 			nm=k-1;
