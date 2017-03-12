@@ -840,15 +840,20 @@ template<int lrows, int mate, int rcols, typename P1, typename P2, typename T>
 auto operator*(MatrixView<lrows, mate, P1, T const> const& lhs,  MatrixView<mate, rcols, P2, T const> const& rhs) -> Matrix<lrows, rcols, T> {
 	Matrix<lrows, rcols, T> ret;
 	for (int oRow(0); oRow < lrows; ++oRow) {
+		auto lhsRow = lhs.view_row(oRow);
 		for (int oCol(0); oCol < rcols; ++oCol) {
-			T akkumulator = 0;
-			for (int iCol(0); iCol < mate; ++iCol) {
-				akkumulator += lhs(oRow, iCol) * rhs(iCol, oCol);
-			}
-			ret(oRow, oCol) = akkumulator;
+			ret(oRow, oCol) = lhsRow * rhs.view_col(oCol);
 		}
 	}
 	return ret;
+}
+template<int mate, typename P1, typename P2, typename T>
+auto operator*(MatrixView<1, mate, P1, T const> const& lhs,  MatrixView<mate, 1, P2, T const> const& rhs) -> Matrix<1, 1, T> {
+	T accumulator(0.);
+	for (int i(0); i < mate; ++i) {
+		accumulator += lhs(i) * rhs(i);
+	}
+	return Matrix<1, 1, T>(accumulator);
 }
 template<int rows, int cols, typename Props, typename T>
 auto operator*(MatrixView<rows, cols, Props, T const> const& lhs, T const& rhs) -> Matrix<rows, cols, T> {
