@@ -944,7 +944,7 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 	auto& v = retValue.V;
 	v.diag() = 1.;
 
-	T anorm, c, f, g, h, s, scale, x, y, z;
+	T anorm, c, f, g, h, s, scale;
 
 	std::array<T, cols> rv1;
 	g = scale = anorm = 0.0; /* Householder reduction to bidiagonal form */
@@ -998,10 +998,9 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 	}
 	for (int i = cols-2; i >= 0; i--) { /* Accumulation of right-hand transformations. */
 		int l = i+1;
-		g = rv1[i+1];
-		if (g) {
+		if (rv1[i+1]) {
 			for (int j = l; j < cols; j++) /* Double division to avoid possible underflow. */
-				v(j, i) = (a(i, j)/a(i, l)) / g;
+				v(j, i) = (a(i, j)/a(i, l)) / rv1[i+1];
 			for (int j = l; j < cols; j++) {
 				s=0.;
 				for (int k = l; k <cols; k++) s += a(i, k)*v(k, j);
@@ -1010,98 +1009,92 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 		}
 		for (int j = l; j < cols; j++) v(i, j) = v(j, i) = 0.;
 	}
-	for (int i=min(rows, cols); i >= 1; i--) { /* Accumulation of left-hand transformations. */
+	for (int i=min(rows, cols)-1; i >= 0; i--) { /* Accumulation of left-hand transformations. */
 		int l = i+1;
-		g = w(i-1);
-		for (int j = l; j <= cols; j++) a(i-1, j-1) = 0.;
-		if (g) {
-			g=1.0/g;
-			for (int j = l; j <= cols; j++) {
+		for (int j = l; j < cols; j++) a(i, j) = 0.;
+		if (w(i)) {
+			T w_inv = 1.0 / w(i);
+			for (int j = l; j < cols; j++) {
 				s = 0.;
-				for (int k = l; k <= rows; k++) s += a(k-1, i-1) * a(k-1, j-1);
-				f = (s/a(i-1, i-1))*g;
-				for (int k = i; k <= rows; k++) a(k-1, j-1) += f*a(k-1, i-1);
+				for (int k = l; k < rows; k++) s += a(k, i) * a(k, j);
+				f = (s/a(i, i))*w_inv;
+				for (int k = i; k < rows; k++) a(k, j) += f*a(k, i);
 			}
-			for (int j = i; j <= rows; j++) a(j-1, i-1) *= g;
-		} else for (int j = i; j <= rows; j++) a(j-1, i-1)=0.0;
-		++a(i-1, i-1);
+			for (int j = i; j < rows; j++) a(j, i) *= w_inv;
+		} else for (int j = i; j < rows; j++) a(j, i)=0.0;
+		++a(i, i);
 	}
-	int nm;
-	for (int k = cols; k >= 1; k--) { /* Diagonalization of the bidiagonal form. */
+	for (int k = cols-1; k >= 0; k--) { /* Diagonalization of the bidiagonal form. */
 		for (int its = 1; its <=30; its++) {
 			int flag = 1;
 			int l;
-			for (l = k; l >= 1; l--) { /* Test for splitting. */
-				nm =l-1; /* Note that rv1[0] is always zero. */
-				if ((T)(abs(rv1[l-1])+anorm) == anorm) {
+			for (l = k; l >= 0; l--) { /* Test for splitting. */
+				/* Note that rv1[0] is always zero. */
+				if ((T)(abs(rv1[l])+anorm) == anorm) {
 					flag=0;
 					break;
 				}
-				if ((T)(abs(w(nm-1))+anorm) == anorm) break;
+				if ((T)(abs(w(l-1))+anorm) == anorm) break;
 			}
 			if (flag) {
 				c = 0.0; /* Cancellation of rv1[l-1], if l > 1. */
 				s = 1.0;
-				for (int i = l; i <= k; i++) {
-					f = s*rv1[i-1];
-					rv1[i-1] = c*rv1[i-1];
+				for (int i = l; i < k; i++) {
+					f = s*rv1[i];
+					rv1[i] = c*rv1[i];
 					if ((T)(std::abs(f)+anorm) == anorm) break;
-					g = w(i-1);
-					h = pythag(f,g);
-					w(i-1) = h;
+					h = pythag(f,w(i));
+					w(i) = h;
 					h = 1./h;
-					c = g*h;
+					c = w(i)*h;
 					s = -f*h;
-					for (int j = 1; j <= rows; j++) {
-						y = a(j-1, nm-1);
-						z = a(j-1, i-1);
-						a(j-1, nm-1) = y*c+z*s;
-						a(j-1, i-1) = z*c-y*s;
+					for (int j = 0; j < rows; j++) {
+						a(j, l-1) = a(j, l-1) * c + a(j, i) * s;
+						a(j, i) = a(j, i) * c - a(j, l-1) * s;
 					}
 				}
 			}
-			z = w(k-1);
 			if (l == k) { /* Convergence. */
-				if (z < 0.0) { /* Singular value is made nonnegative. */
-					w(k-1) = -z;
-					for (int j = 1; j <= cols; j++) v(j-1, k-1) = -v(j-1, k-1);
+				if (w(k) < 0.0) { /* Singular value is made nonnegative. */
+					w(k) = -w(k);
+					v.view_col(k) = -v.view_col(k);
 				}
 				break;
 			}
 			if (its == 30) {
 				throw runtime_error("no convergence after many svd iterations");
 			}
-			x = w(l-1); /* Shift from bottom 2-by-2 minor. */
-			nm = k-1;
-			y = w(nm-1);
-			g = rv1[nm-1];
-			h = rv1[k-1];
+			T x = w(l); /* Shift from bottom 2-by-2 minor. */
+			T y = w(k-1);
+			T z = w(k);
+			g = rv1[k-1];
+			h = rv1[k];
 			f = ((y-z)*(y+z)+(g-h)*(g+h))/(2.0*h*y);
 			g = pythag(f,1.0);
 			f = ((x-z)*(x+z)+h*((y/(f+signCopy(g,f)))-h))/x;
 			c = s = 1.; /* Next QR transformation: */
-			for (int j = l; j <= nm; j++) {
+			for (int j = l; j < k; j++) {
 				int i = j+1;
-				g = rv1[i-1];
-				y = w(i-1);
+				g = rv1[i];
+				y = w(i);
 				h = s*g;
 				g = c*g;
 				z = pythag(f,h);
-				rv1[j-1] = z;
+				rv1[j] = z;
 				c = f/z;
 				s = h/z;
 				f = x*c+g*s;
 				g = g*c-x*s;
 				h = y*s;
 				y *= c;
-				for (int jj = 1; jj <= cols; jj++) {
-					x = v(jj-1, j-1);
-					z = v(jj-1, i-1);
-					v(jj-1, j-1) = x*c+z*s;
-					v(jj-1, i-1) = z*c-x*s;
+				for (int jj = 0; jj < cols; jj++) {
+					x = v(jj, j);
+					z = v(jj, i);
+					v(jj, j) = x*c+z*s;
+					v(jj, i) = z*c-x*s;
 				}
 				z = pythag(f,h);
-				w(j-1) = z; /* Rotation can be arbitrary if z = 0. */
+				w(j) = z; /* Rotation can be arbitrary if z = 0. */
 				if (z) {
 					z = 1.0/z;
 					c = f*z;
@@ -1109,16 +1102,16 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 				}
 				f = c*g+s*y;
 				x = c*y-s*g;
-				for (int jj = 1; jj <= rows; jj++) {
-					y = a(jj-1, j-1);
-					z = a(jj-1, i-1);
-					a(jj-1, j-1) = y*c+z*s;
-					a(jj-1, i-1) = z*c-y*s;
+				for (int jj = 0; jj < rows; jj++) {
+					y = a(jj, j);
+					z = a(jj, i);
+					a(jj, j) = y*c+z*s;
+					a(jj, i) = z*c-y*s;
 				}
 			}
-			rv1[l-1] = 0.;
-			rv1[k-1] = f;
-			w(k-1) = x;
+			rv1[l] = 0.;
+			rv1[k] = f;
+			w(k) = x;
 		}
 	}
 
