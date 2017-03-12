@@ -281,13 +281,8 @@ public:
 	MatrixView(MatrixView& rhs) : Parent(rhs), basePtr(rhs.basePtr) {}
 	MatrixView(MatrixView&& rhs) : Parent(rhs), basePtr(rhs.basePtr) {}
 
-	//MatrixView(MatrixView const& rhs) : basePtr(rhs.basePtr) {}
-
 	// pass through
 	using MatrixView<trows, tcols, prop, T const>::operator();
-/*	auto operator()(int row, int col) const& -> T {
-		return Parent::operator()(row, col);
-	}*/
 
 	// value element access
 	template<bool t = prop::transposed, typename std::enable_if<not t>::type* = nullptr>
