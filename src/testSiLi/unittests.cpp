@@ -284,7 +284,7 @@ TEST(SiLi, matrixView_inv44) {
 	}
 }
 
-TEST(SiLi, matrixView_svd) {
+TEST(SiLi, matrixView_svd2x2) {
 	auto m = SiLi::make_mat<double, 2, 2>({{1., 2.}, {2., 3.}});
 
 	auto svd = m.svd();
@@ -299,7 +299,7 @@ TEST(SiLi, matrixView_svd) {
 	EXPECT_NEAR(m(1, 1), re(1, 1), 1e-9);
 }
 
-TEST(SiLi, matrixView_svd2) {
+TEST(SiLi, matrixView_svd3x3) {
 	auto m = SiLi::make_mat<double, 3, 3>({{1., 2., 3.}, {2., 3., 4.}, {4., 1., 10.}});
 
 	auto svd = m.svd();
@@ -319,7 +319,7 @@ TEST(SiLi, matrixView_svd2) {
 	EXPECT_NEAR(m(2, 2), re(2, 2), 1e-9);
 }
 
-TEST(SiLi, matrixView_svd3) {
+TEST(SiLi, matrixView_svd4x4) {
 	auto m = SiLi::make_mat<double, 4, 4>({{1., 2., 3., 10.}, {2., 3., 4., 20.}, {4., -1., 10., 50.}, {10., -11., 12., -13.}});
 
 	auto svd = m.svd();
@@ -345,6 +345,43 @@ TEST(SiLi, matrixView_svd3) {
 	EXPECT_NEAR(m(2, 3), re(2, 3), 1e-9);
 	EXPECT_NEAR(m(3, 3), re(3, 3), 1e-9);
 }
+
+TEST(SiLi, matrixView_svd5x5) {
+	auto m = SiLi::make_mat<double, 5, 5>({{1., 2., 3., 10., -100.}, {2., 3., 4., 20., 101.}, {4., -1., 10., 50., -102.}, {10., -11., 12., -13., -103.}, {104., -105., 106., 107., -108.}});
+
+	auto svd = m.svd();
+	auto S = make_diag(svd.S);
+
+	auto re = svd.U * S * svd.V.t();
+	EXPECT_NEAR(std::abs(svd.U.det()), 1., 1e-9);
+	EXPECT_NEAR(std::abs(svd.V.det()), 1., 1e-9);
+	EXPECT_NEAR(m(0, 0), re(0, 0), 1e-9);
+	EXPECT_NEAR(m(1, 0), re(1, 0), 1e-9);
+	EXPECT_NEAR(m(2, 0), re(2, 0), 1e-9);
+	EXPECT_NEAR(m(3, 0), re(3, 0), 1e-9);
+	EXPECT_NEAR(m(4, 0), re(4, 0), 1e-9);
+	EXPECT_NEAR(m(0, 1), re(0, 1), 1e-9);
+	EXPECT_NEAR(m(1, 1), re(1, 1), 1e-9);
+	EXPECT_NEAR(m(2, 1), re(2, 1), 1e-9);
+	EXPECT_NEAR(m(3, 1), re(3, 1), 1e-9);
+	EXPECT_NEAR(m(4, 1), re(4, 1), 1e-9);
+	EXPECT_NEAR(m(0, 2), re(0, 2), 1e-9);
+	EXPECT_NEAR(m(1, 2), re(1, 2), 1e-9);
+	EXPECT_NEAR(m(2, 2), re(2, 2), 1e-9);
+	EXPECT_NEAR(m(3, 2), re(3, 2), 1e-9);
+	EXPECT_NEAR(m(4, 2), re(4, 2), 1e-9);
+	EXPECT_NEAR(m(0, 3), re(0, 3), 1e-9);
+	EXPECT_NEAR(m(1, 3), re(1, 3), 1e-9);
+	EXPECT_NEAR(m(2, 3), re(2, 3), 1e-9);
+	EXPECT_NEAR(m(3, 3), re(3, 3), 1e-9);
+	EXPECT_NEAR(m(4, 3), re(4, 3), 1e-9);
+	EXPECT_NEAR(m(0, 4), re(0, 4), 1e-9);
+	EXPECT_NEAR(m(1, 4), re(1, 4), 1e-9);
+	EXPECT_NEAR(m(2, 4), re(2, 4), 1e-9);
+	EXPECT_NEAR(m(3, 4), re(3, 4), 1e-9);
+	EXPECT_NEAR(m(4, 4), re(4, 4), 1e-9);
+}
+
 
 
 
