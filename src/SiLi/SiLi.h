@@ -532,9 +532,24 @@ auto make_eye() -> Matrix<rows, cols, T> {
 }
 
 // create matrix from vector
-template<typename T, typename Prop, int rows>
+template<int rows, typename T, typename Prop>
 auto make_diag(MatrixView<rows, 1, Prop, T const> const& _view) -> Matrix<rows, rows, T> {
 	Matrix<rows, rows, T> retVal(0);
+	retVal.diag() = _view;
+	return retVal;
+}
+
+template<int rows, int cols, typename T, typename Prop>
+auto make_diag(MatrixView<rows, 1, Prop, T const> const& _view) -> Matrix<rows, cols, T> {
+	static_assert(cols >= rows, "cannot build a smaller diagonal matrix than the input vector size");
+	Matrix<rows, cols, T> retVal(0);
+	retVal.diag() = _view;
+	return retVal;
+}
+template<int rows, int cols, typename T, typename Prop>
+auto make_diag(MatrixView<cols, 1, Prop, T const> const& _view) -> Matrix<rows, cols, T> {
+	static_assert(rows >= cols, "cannot build a smaller diagonal matrix than the input vector size");
+	Matrix<rows, cols, T> retVal(0);
 	retVal.diag() = _view;
 	return retVal;
 }
