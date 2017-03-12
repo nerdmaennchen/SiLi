@@ -554,15 +554,13 @@ auto luDecomposition_L(MatrixView<rows, cols, Props, T const> const& _mat) -> Ma
 	Matrix<rows, cols, T> L;
 
 	for (int k=0; k<rows; ++k) {
-		for (int j=k;j<rows;++j) {
-			double sum =0.;
-			for (int p=0; p < k; ++p) sum += L(k, p) * L(p, j);
-			L(k, j) = _mat(k, j) - sum;
+		auto kRow = L.view_row(k);
+		auto kCol = L.view_col(k);
+		for (int i=k;i<rows;++i) {
+			L(k, i) = _mat(k, i) - kRow * L.view_col(i);
 		}
 		for (int i=k+1; i<rows;++i) {
-			double sum = 0.;
-			for (int p=0; p<k;++p) sum += L(i, p) * L(p, k);
-			L(i, k) = (_mat(i, k) - sum) / L(k, k);
+			L(i, k) = (_mat(i, k) - T(L.view_row(i) * kCol)) / L(k, k);
 		}
 	}
 	return L;
