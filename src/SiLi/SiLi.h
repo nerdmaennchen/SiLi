@@ -944,18 +944,18 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 	auto& v = retValue.V;
 
 	int l;
-	T anorm,c,f,g,h,s,scale,x,y,z;
+	T anorm, c, f, g, h, s, scale, x, y, z;
 
 	std::array<T, cols> rv1;
-	g=scale=anorm=0.0; /* Householder reduction to bidiagonal form */
+	g = scale = anorm = 0.0; /* Householder reduction to bidiagonal form */
 	for (int i = 0; i < cols; ++i) {
-		l=i+2;
+		l = i+2;
 		rv1[i] = scale*g;
 		g = s = scale = 0.0;
 		if (i < rows) {
-			for (int k=i;k<rows;k++) scale += abs(a(k, i));
+			for (int k = i;k < rows; k++) scale += abs(a(k, i));
 			if (scale) {
-				for (int k=i;k<rows;k++) {
+				for (int k = i; k < rows; k++) {
 					a(k, i) /= scale;
 					s += a(k, i)*a(k, i);
 				}
@@ -963,21 +963,21 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 				g = -signCopy(sqrt(s),f);
 				h=f*g-s;
 				a(i, i)=f-g;
-				for (int j=l;j<=cols;j++) {
+				for (int j = l; j <= cols; j++) {
 					s=0;
-					for (int k=i;k<rows;k++) s += a(k, i)*a(k, j-1);
+					for (int k = i; k < rows; k++) s += a(k, i)*a(k, j-1);
 					f=s/h;
-					for (int k=i;k<rows;k++) a(k, j-1) += f*a(k, i);
+					for (int k = i; k < rows; k++) a(k, j-1) += f*a(k, i);
 				}
-				for (int k=i;k<rows;k++) a(k, i) *= scale;
+				for (int k = i; k < rows; k++) a(k, i) *= scale;
 			}
 		}
-		w(i)=scale *g;
-		g=s=scale=0.0;
+		w(i) = scale *g;
+		g = s = scale = 0.0;
 		if (i < rows && i+1 != cols) {
-			for (int k=l;k<=cols;k++) scale += abs(a(i, k-1));
+			for (int k = l; k <= cols; k++) scale += abs(a(i, k-1));
 			if (scale) {
-				for (int k=l;k<=cols;k++) {
+				for (int k = l; k <= cols; k++) {
 					a(i, k-1) /= scale;
 					s += a(i, k-1)*a(i, k-1);
 				}
@@ -985,56 +985,56 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 				g = -signCopy(sqrt(s),f);
 				h=f*g-s;
 				a(i, l-1)=f-g;
-				for (int k=l;k<=cols;k++) rv1[k-1]=a(i, k-1)/h;
-				for (int j=l;j<=rows;j++) {
+				for (int k = l; k <= cols; k++) rv1[k-1]=a(i, k-1)/h;
+				for (int j = l; j <= rows; j++) {
 					s=0.;
-					for (int k=l;k<=cols;k++) s += a(j-1, k-1)*a(i, k-1);
-					for (int k=l;k<=cols;k++) a(j-1, k-1) += s*rv1[k-1];
+					for (int k = l; k <= cols; k++) s += a(j-1, k-1)*a(i, k-1);
+					for (int k = l; k <= cols; k++) a(j-1, k-1) += s*rv1[k-1];
 				}
-				for (int k=l;k<=cols;k++) a(i, k-1) *= scale;
+				for (int k = l; k <= cols; k++) a(i, k-1) *= scale;
 			}
 		}
 		anorm = max(anorm,(abs(w(i))+abs(rv1[i])));
 	}
-	for (int i=cols;i>=1;i--) { /* Accumulation of right-hand transformations. */
+	for (int i = cols; i >= 1; i--) { /* Accumulation of right-hand transformations. */
 		if (i < cols) {
 			if (g) {
-				for (int j=l;j<=cols;j++) /* Double division to avoid possible underflow. */
+				for (int j = l; j <= cols; j++) /* Double division to avoid possible underflow. */
 					v(j-1, i-1)=(a(i-1, j-1)/a(i-1, l-1))/g;
-				for (int j=l;j<=cols;j++) {
+				for (int j = l; j <= cols; j++) {
 					s=0.;
-					for (int k=l;k<=cols;k++) s += a(i-1, k-1)*v(k-1, j-1);
-					for (int k=l;k<=cols;k++) v(k-1, j-1) += s*v(k-1, i-1);
+					for (int k = l; k <=cols; k++) s += a(i-1, k-1)*v(k-1, j-1);
+					for (int k = l; k <=cols; k++) v(k-1, j-1) += s*v(k-1, i-1);
 				}
 			}
-			for (int j=l;j<=cols;j++) v(i-1, j-1)=v(j-1, i-1)=0.0;
+			for (int j = l; j <= cols; j++) v(i-1, j-1)=v(j-1, i-1)=0.0;
 		}
-		v(i-1, i-1)=1.0;
-		g=rv1[i-1];
-		l=i;
+		v(i-1, i-1) = 1.;
+		g = rv1[i-1];
+		l = i;
 	}
-	for (int i=min(rows,cols);i>=1;i--) { /* Accumulation of left-hand transformations. */
-		l=i+1;
-		g=w(i-1);
-		for (int j=l;j<=cols;j++) a(i-1, j-1)=0.0;
+	for (int i=min(rows, cols); i >= 1; i--) { /* Accumulation of left-hand transformations. */
+		l = i+1;
+		g = w(i-1);
+		for (int j = l; j <= cols; j++) a(i-1, j-1) = 0.;
 		if (g) {
 			g=1.0/g;
-			for (int j=l;j<=cols;j++) {
+			for (int j = l; j <= cols; j++) {
 				s = 0.;
-				for (int k=l;k<=rows;k++) s += a(k-1, i-1)*a(k-1, j-1);
-				f=(s/a(i-1, i-1))*g;
-				for (int k=i;k<=rows;k++) a(k-1, j-1) += f*a(k-1, i-1);
+				for (int k = l; k <= rows; k++) s += a(k-1, i-1) * a(k-1, j-1);
+				f = (s/a(i-1, i-1))*g;
+				for (int k = i; k <= rows; k++) a(k-1, j-1) += f*a(k-1, i-1);
 			}
-			for (int j=i;j<=rows;j++) a(j-1, i-1) *= g;
-		} else for (int j=i;j<=rows;j++) a(j-1, i-1)=0.0;
+			for (int j = i; j <= rows; j++) a(j-1, i-1) *= g;
+		} else for (int j = i; j <= rows; j++) a(j-1, i-1)=0.0;
 		++a(i-1, i-1);
 	}
 	int nm;
-	for (int k=cols;k>=1;k--) { /* Diagonalization of the bidiagonal form. */
-		for (int its=1;its<=30;its++) {
-			int flag=1;
-			for (l=k;l>=1;l--) { /* Test for splitting. */
-				nm=l-1; /* Note that rv1[0] is always zero. */
+	for (int k = cols; k >= 1; k--) { /* Diagonalization of the bidiagonal form. */
+		for (int its = 1; its <=30; its++) {
+			int flag = 1;
+			for (l = k; l >= 1; l--) { /* Test for splitting. */
+				nm =l-1; /* Note that rv1[0] is always zero. */
 				if ((T)(abs(rv1[l-1])+anorm) == anorm) {
 					flag=0;
 					break;
@@ -1042,89 +1042,89 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 				if ((T)(abs(w(nm-1))+anorm) == anorm) break;
 			}
 			if (flag) {
-				c=0.0; /* Cancellation of rv1[l-1], if l > 1. */
-				s=1.0;
-				for (int i=l;i<=k;i++) {
-					f=s*rv1[i-1];
-					rv1[i-1]=c*rv1[i-1];
+				c = 0.0; /* Cancellation of rv1[l-1], if l > 1. */
+				s = 1.0;
+				for (int i = l; i <= k; i++) {
+					f = s*rv1[i-1];
+					rv1[i-1] = c*rv1[i-1];
 					if ((T)(std::abs(f)+anorm) == anorm) break;
-					g=w(i-1);
-					h=pythag(f,g);
-					w(i-1)=h;
-					h=1.0/h;
-					c=g*h;
+					g = w(i-1);
+					h = pythag(f,g);
+					w(i-1) = h;
+					h = 1./h;
+					c = g*h;
 					s = -f*h;
-					for (int j=1;j<=rows;j++) {
-						y=a(j-1, nm-1);
-						z=a(j-1, i-1);
-						a(j-1, nm-1)=y*c+z*s;
-						a(j-1, i-1)=z*c-y*s;
+					for (int j = 1; j <= rows; j++) {
+						y = a(j-1, nm-1);
+						z = a(j-1, i-1);
+						a(j-1, nm-1) = y*c+z*s;
+						a(j-1, i-1) = z*c-y*s;
 					}
 				}
 			}
-			z=w(k-1);
+			z = w(k-1);
 			if (l == k) { /* Convergence. */
 				if (z < 0.0) { /* Singular value is made nonnegative. */
 					w(k-1) = -z;
-					for (int j=1;j<=cols;j++) v(j-1, k-1) = -v(j-1, k-1);
+					for (int j = 1; j <= cols; j++) v(j-1, k-1) = -v(j-1, k-1);
 				}
 				break;
 			}
 			if (its == 30) {
 				throw runtime_error("no convergence after many svd iterations");
 			}
-			x=w(l-1); /* Shift from bottom 2-by-2 minor. */
-			nm=k-1;
-			y=w(nm-1);
-			g=rv1[nm-1];
-			h=rv1[k-1];
-			f=((y-z)*(y+z)+(g-h)*(g+h))/(2.0*h*y);
-			g=pythag(f,1.0);
-			f=((x-z)*(x+z)+h*((y/(f+signCopy(g,f)))-h))/x;
-			c=s=1.0; /* Next QR transformation: */
-			for (int j=l;j<=nm;j++) {
-				int i=j+1;
-				g=rv1[i-1];
-				y=w(i-1);
-				h=s*g;
-				g=c*g;
-				z=pythag(f,h);
-				rv1[j-1]=z;
-				c=f/z;
-				s=h/z;
-				f=x*c+g*s;
+			x = w(l-1); /* Shift from bottom 2-by-2 minor. */
+			nm = k-1;
+			y = w(nm-1);
+			g = rv1[nm-1];
+			h = rv1[k-1];
+			f = ((y-z)*(y+z)+(g-h)*(g+h))/(2.0*h*y);
+			g = pythag(f,1.0);
+			f = ((x-z)*(x+z)+h*((y/(f+signCopy(g,f)))-h))/x;
+			c = s = 1.; /* Next QR transformation: */
+			for (int j = l; j <= nm; j++) {
+				int i = j+1;
+				g = rv1[i-1];
+				y = w(i-1);
+				h = s*g;
+				g = c*g;
+				z = pythag(f,h);
+				rv1[j-1] = z;
+				c = f/z;
+				s = h/z;
+				f = x*c+g*s;
 				g = g*c-x*s;
-				h=y*s;
+				h = y*s;
 				y *= c;
-				for (int jj=1;jj<=cols;jj++) {
-					x=v(jj-1, j-1);
-					z=v(jj-1, i-1);
-					v(jj-1, j-1)=x*c+z*s;
-					v(jj-1, i-1)=z*c-x*s;
+				for (int jj = 1; jj <= cols; jj++) {
+					x = v(jj-1, j-1);
+					z = v(jj-1, i-1);
+					v(jj-1, j-1) = x*c+z*s;
+					v(jj-1, i-1) = z*c-x*s;
 				}
-				z=pythag(f,h);
-				w(j-1)=z; /* Rotation can be arbitrary if z = 0. */
+				z = pythag(f,h);
+				w(j-1) = z; /* Rotation can be arbitrary if z = 0. */
 				if (z) {
-					z=1.0/z;
-					c=f*z;
-					s=h*z;
+					z = 1.0/z;
+					c = f*z;
+					s = h*z;
 				}
-				f=c*g+s*y;
-				x=c*y-s*g;
-				for (int jj=1;jj<=rows;jj++) {
-					y=a(jj-1, j-1);
-					z=a(jj-1, i-1);
-					a(jj-1, j-1)=y*c+z*s;
-					a(jj-1, i-1)=z*c-y*s;
+				f = c*g+s*y;
+				x = c*y-s*g;
+				for (int jj = 1; jj <= rows; jj++) {
+					y = a(jj-1, j-1);
+					z = a(jj-1, i-1);
+					a(jj-1, j-1) = y*c+z*s;
+					a(jj-1, i-1) = z*c-y*s;
 				}
 			}
 			rv1[l-1] = 0.;
 			rv1[k-1] = f;
-			w(k-1)=x;
+			w(k-1) = x;
 		}
 	}
 
-	// sort by eigenvalues
+	// sort by singular values
 	// slow sorting
 	std::array<std::pair<T, int>, cols> columns;
 	for (int i(0); i < cols; ++i) {
