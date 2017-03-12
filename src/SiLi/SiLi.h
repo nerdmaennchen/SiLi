@@ -9,6 +9,9 @@
 namespace SiLi
 {
 
+// This exception is thrown by svd() if the max iteration count is reached
+struct MaxIteration {};
+
 template<int _rowStride, bool _transposed = false, int _offset=0>
 struct Properties {
 	static constexpr int  rowStride  {_rowStride};
@@ -246,15 +249,27 @@ public:
 	}
 
 	// compute svd so that *this = svd.U * make_diag(svd.S) * svd.V.t()
+	// Will throw SiLi::MaxIteration if maximum of iteration is reached
 	auto svd() const -> SVD<trows, tcols, T>;
 
 	// compute abs
 	auto abs() const -> Matrix<trows, tcols, T> {
 		return abs(*this);
 	}
+
 	// compute sum
 	auto sum() const -> T {
 		return sum(*this);
+	}
+
+	auto isfinite() const -> bool {
+		using std::isfinite;
+		for (auto const& d : (*this)) {
+			if (not isfinite(d)) {
+				return false;
+			}
+		}
+		return true;
 	}
 };
 
@@ -271,13 +286,8 @@ public:
 	MatrixView(MatrixView& rhs) : Parent(rhs), basePtr(rhs.basePtr) {}
 	MatrixView(MatrixView&& rhs) : Parent(rhs), basePtr(rhs.basePtr) {}
 
-	//MatrixView(MatrixView const& rhs) : basePtr(rhs.basePtr) {}
-
 	// pass through
 	using MatrixView<trows, tcols, prop, T const>::operator();
-/*	auto operator()(int row, int col) const& -> T {
-		return Parent::operator()(row, col);
-	}*/
 
 	// value element access
 	template<bool t = prop::transposed, typename std::enable_if<not t>::type* = nullptr>
@@ -1062,7 +1072,7 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 				break;
 			}
 			if (its == 30) {
-				throw runtime_error("no convergence after many svd iterations");
+				throw MaxIteration{};
 			}
 			T x = w(l); /* Shift from bottom 2-by-2 minor. */
 			T y = w(k-1);
@@ -1152,8 +1162,10 @@ auto abs(MatrixView<trows, tcols, props, T const> const& _view) -> Matrix<trows,
 			ret(r, c) = abs(_view(r, c));
 		}
 	}
+
 	return ret;
 }
+
 template<int trows, int tcols, typename props, typename T>
 auto sum(MatrixView<trows, tcols, props, T const> const& _view) -> T {
 	T ret = 0.;
@@ -1163,6 +1175,11 @@ auto sum(MatrixView<trows, tcols, props, T const> const& _view) -> T {
 		}
 	}
 	return ret;
+}
+
+template <int trows, int tcols, typename props, typename T>
+auto isfinite(MatrixView<trows, tcols, props, T const> const& _view) -> bool {
+	return _view.isfinite();
 }
 
 /*
