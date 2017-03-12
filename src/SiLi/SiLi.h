@@ -942,14 +942,14 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 	a = _view;
 	auto& w = retValue.S;
 	auto& v = retValue.V;
+	v.diag() = 1.;
 
-	int l;
 	T anorm, c, f, g, h, s, scale, x, y, z;
 
 	std::array<T, cols> rv1;
 	g = scale = anorm = 0.0; /* Householder reduction to bidiagonal form */
 	for (int i = 0; i < cols; ++i) {
-		l = i+1;
+		int l = i+1;
 		rv1[i] = scale*g;
 		g = s = scale = 0.0;
 		if (i < rows) {
@@ -996,26 +996,22 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 		}
 		anorm = max(anorm,(abs(w(i))+abs(rv1[i])));
 	}
-	l = cols+1;
-	for (int i = cols; i >= 1; i--) { /* Accumulation of right-hand transformations. */
-		if (i < cols) {
-			if (g) {
-				for (int j = l; j <= cols; j++) /* Double division to avoid possible underflow. */
-					v(j-1, i-1)=(a(i-1, j-1)/a(i-1, l-1))/g;
-				for (int j = l; j <= cols; j++) {
-					s=0.;
-					for (int k = l; k <=cols; k++) s += a(i-1, k-1)*v(k-1, j-1);
-					for (int k = l; k <=cols; k++) v(k-1, j-1) += s*v(k-1, i-1);
-				}
+	for (int i = cols-2; i >= 0; i--) { /* Accumulation of right-hand transformations. */
+		int l = i+1;
+		g = rv1[i+1];
+		if (g) {
+			for (int j = l; j < cols; j++) /* Double division to avoid possible underflow. */
+				v(j, i) = (a(i, j)/a(i, l)) / g;
+			for (int j = l; j < cols; j++) {
+				s=0.;
+				for (int k = l; k <cols; k++) s += a(i, k)*v(k, j);
+				for (int k = l; k <cols; k++) v(k, j) += s*v(k, i);
 			}
-			for (int j = l; j <= cols; j++) v(i-1, j-1)=v(j-1, i-1)=0.0;
 		}
-		v(i-1, i-1) = 1.;
-		g = rv1[i-1];
-		l = i;
+		for (int j = l; j < cols; j++) v(i, j) = v(j, i) = 0.;
 	}
 	for (int i=min(rows, cols); i >= 1; i--) { /* Accumulation of left-hand transformations. */
-		l = i+1;
+		int l = i+1;
 		g = w(i-1);
 		for (int j = l; j <= cols; j++) a(i-1, j-1) = 0.;
 		if (g) {
@@ -1034,6 +1030,7 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 	for (int k = cols; k >= 1; k--) { /* Diagonalization of the bidiagonal form. */
 		for (int its = 1; its <=30; its++) {
 			int flag = 1;
+			int l;
 			for (l = k; l >= 1; l--) { /* Test for splitting. */
 				nm =l-1; /* Note that rv1[0] is always zero. */
 				if ((T)(abs(rv1[l-1])+anorm) == anorm) {
