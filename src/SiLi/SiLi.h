@@ -231,6 +231,7 @@ public:
 		return MatrixView<(tcols < trows)?tcols:trows, 1, typename prop::Diag, T const> {cBasePtr};
 	}
 
+	/* squared frobenius norm */
 	auto normSqr() const -> T {
 		T ret{0.};
 		for (auto const& d : (*this)) {
@@ -238,9 +239,10 @@ public:
 		}
 		return ret;
 	}
+
+	/* frobenius norm */
 	auto norm() const -> T {
-		using namespace std;
-		return sqrt(normSqr());
+		return std::sqrt(normSqr());
 	}
 
 
