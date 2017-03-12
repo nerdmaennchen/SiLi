@@ -252,6 +252,10 @@ public:
 	auto abs() const -> Matrix<trows, tcols, T> {
 		return abs(*this);
 	}
+	// compute sum
+	auto sum() const -> T {
+		return sum(*this);
+	}
 };
 
 template<int trows, int tcols, typename prop, typename T>
@@ -1159,7 +1163,16 @@ auto abs(MatrixView<trows, tcols, props, T const> const& _view) -> Matrix<trows,
 			ret(r, c) = abs(_view(r, c));
 		}
 	}
-
+	return ret;
+}
+template<int trows, int tcols, typename props, typename T>
+auto sum(MatrixView<trows, tcols, props, T const> const& _view) -> T {
+	T ret = 0.;
+	for (int r(0); r < trows; ++r) {
+		for (int c(0); c < tcols; ++c) {
+			ret += _view(r, c);
+		}
+	}
 	return ret;
 }
 
