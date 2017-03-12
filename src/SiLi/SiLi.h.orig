@@ -256,11 +256,11 @@ public:
 	auto abs() const -> Matrix<trows, tcols, T> {
 		return abs(*this);
 	}
-
+<<<<<<< HEAD
 	// compute sum
 	auto sum() const -> T {
 		return sum(*this);
-	}
+=======
 
 	auto isfinite() const -> bool {
 		using std::isfinite;
@@ -270,6 +270,7 @@ public:
 			}
 		}
 		return true;
+>>>>>>> 243b0b750a7a2aa6085d67747f6fa0c03f7474bd
 	}
 };
 
@@ -947,92 +948,92 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 	using namespace ::SiLi::detail;
 	using namespace std;
 	SVD<rows, cols, T> retValue;
+
+	auto& a = retValue.U;
+	a = _view;
+	auto& w = retValue.S;
+	auto& v = retValue.V;
+	v.diag() = 1.;
+
+	T anorm, c, f, g, h, s, scale;
+
 	std::array<T, cols> rv1;
-
-	auto& U = retValue.U;
-	U = _view;
-	auto& S = retValue.S;
-	auto& V = retValue.V;
-	V.diag() = 1.;
-
-	T anorm, g, scale;
 	g = scale = anorm = 0.0; /* Householder reduction to bidiagonal form */
 	for (int i = 0; i < cols; ++i) {
 		int l = i+1;
 		rv1[i] = scale*g;
-		g = scale = 0.0;
-		T s = 0.;
+		g = s = scale = 0.0;
 		if (i < rows) {
-			for (int k = i;k < rows; k++) scale += abs(U(k, i));
+			for (int k = i;k < rows; k++) scale += abs(a(k, i));
 			if (scale) {
 				for (int k = i; k < rows; k++) {
-					U(k, i) /= scale;
-					s += U(k, i)*U(k, i);
+					a(k, i) /= scale;
+					s += a(k, i)*a(k, i);
 				}
-				T f = U(i, i);
+				f=a(i, i);
 				g = -signCopy(sqrt(s),f);
-				T h = f*g-s;
-				U(i, i)=f-g;
+				h=f*g-s;
+				a(i, i)=f-g;
 				for (int j = l; j < cols; j++) {
 					s=0;
-					for (int k = i; k < rows; k++) s += U(k, i)*U(k, j);
+					for (int k = i; k < rows; k++) s += a(k, i)*a(k, j);
 					f=s/h;
-					for (int k = i; k < rows; k++) U(k, j) += f*U(k, i);
+					for (int k = i; k < rows; k++) a(k, j) += f*a(k, i);
 				}
-				for (int k = i; k < rows; k++) U(k, i) *= scale;
+				for (int k = i; k < rows; k++) a(k, i) *= scale;
 			}
 		}
-		S(i) = scale *g;
+		w(i) = scale *g;
 		g = s = scale = 0.0;
 		if (i < rows && i+1 < cols) {
-			for (int k = l; k < cols; k++) scale += abs(U(i, k));
+			for (int k = l; k < cols; k++) scale += abs(a(i, k));
 			if (scale) {
 				for (int k = l; k < cols; k++) {
-					U(i, k) /= scale;
-					s += U(i, k)*U(i, k);
+					a(i, k) /= scale;
+					s += a(i, k)*a(i, k);
 				}
-				T f = U(i, l);
+				f=a(i, l);
 				g = -signCopy(sqrt(s),f);
-				T h = f*g-s;
-				U(i, l)=f-g;
-				for (int k = l; k < cols; k++) rv1[k]=U(i, k)/h;
+				h=f*g-s;
+				a(i, l)=f-g;
+				for (int k = l; k < cols; k++) rv1[k]=a(i, k)/h;
 				for (int j = l; j < rows; j++) {
 					s=0.;
-					for (int k = l; k < cols; k++) s += U(j, k)*U(i, k);
-					for (int k = l; k < cols; k++) U(j, k) += s*rv1[k];
+					for (int k = l; k < cols; k++) s += a(j, k)*a(i, k);
+					for (int k = l; k < cols; k++) a(j, k) += s*rv1[k];
 				}
-				for (int k = l; k < cols; k++) U(i, k) *= scale;
+				for (int k = l; k < cols; k++) a(i, k) *= scale;
 			}
 		}
-		anorm = max(anorm,(abs(S(i))+abs(rv1[i])));
+		anorm = max(anorm,(abs(w(i))+abs(rv1[i])));
 	}
 	for (int i = cols-2; i >= 0; i--) { /* Accumulation of right-hand transformations. */
 		int l = i+1;
 		if (rv1[i+1]) {
 			for (int j = l; j < cols; j++) /* Double division to avoid possible underflow. */
-				V(j, i) = (U(i, j)/U(i, l)) / rv1[i+1];
+				v(j, i) = (a(i, j)/a(i, l)) / rv1[i+1];
 			for (int j = l; j < cols; j++) {
-				T s=0.;
-				for (int k = l; k <cols; k++) s += U(i, k)*V(k, j);
-				for (int k = l; k <cols; k++) V(k, j) += s*V(k, i);
+				s=0.;
+				for (int k = l; k <cols; k++) s += a(i, k)*v(k, j);
+				for (int k = l; k <cols; k++) v(k, j) += s*v(k, i);
 			}
 		}
-		for (int j = l; j < cols; j++) V(i, j) = V(j, i) = 0.;
+		for (int j = l; j < cols; j++) v(i, j) = v(j, i) = 0.;
 	}
 	for (int i=min(rows, cols)-1; i >= 0; i--) { /* Accumulation of left-hand transformations. */
 		int l = i+1;
-		for (int j = l; j < cols; j++) U(i, j) = 0.;
-		if (S(i)) {
-			T w_inv = 1.0 / S(i);
+		for (int j = l; j < cols; j++) a(i, j) = 0.;
+		if (w(i)) {
+			T w_inv = 1.0 / w(i);
 			for (int j = l; j < cols; j++) {
-				T s = 0.;
-				for (int k = l; k < rows; k++) s += U(k, i) * U(k, j);
-				T f = (s/U(i, i))*w_inv;
-				for (int k = i; k < rows; k++) U(k, j) += f*U(k, i);
+				s = 0.;
+				for (int k = l; k < rows; k++) s += a(k, i) * a(k, j);
+				f = (s/a(i, i))*w_inv;
+				for (int k = i; k < rows; k++) a(k, j) += f*a(k, i);
 			}
-			for (int j = i; j < rows; j++) U(j, i) *= w_inv;
-		} else for (int j = i; j < rows; j++) U(j, i)=0.0;
-		++U(i, i);
+			for (int j = i; j < rows; j++) a(j, i) *= w_inv;
+		} else for (int j = i; j < rows; j++) a(j, i)=0.0;
+		++a(i, i);
 	}
 	for (int k = cols-1; k >= 0; k--) { /* Diagonalization of the bidiagonal form. */
 		for (int its = 1; its <=30; its++) {
@@ -1044,50 +1045,49 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 					flag=0;
 					break;
 				}
-				if ((T)(abs(S(l-1))+anorm) == anorm) break;
+				if ((T)(abs(w(l-1))+anorm) == anorm) break;
 			}
 			if (flag) {
-				T c = 0.0; /* Cancellation of rv1[l-1], if l > 1. */
-				T s = 1.0;
+				c = 0.0; /* Cancellation of rv1[l-1], if l > 1. */
+				s = 1.0;
 				for (int i = l; i < k; i++) {
-					T f = s*rv1[i];
+					f = s*rv1[i];
 					rv1[i] = c*rv1[i];
 					if ((T)(std::abs(f)+anorm) == anorm) break;
-					T h = pythag(f,S(i));
-					S(i) = h;
+					h = pythag(f,w(i));
+					w(i) = h;
 					h = 1./h;
-					c = S(i)*h;
+					c = w(i)*h;
 					s = -f*h;
 					for (int j = 0; j < rows; j++) {
-						U(j, l-1) = U(j, l-1) * c + U(j, i) * s;
-						U(j, i) = U(j, i) * c - U(j, l-1) * s;
+						a(j, l-1) = a(j, l-1) * c + a(j, i) * s;
+						a(j, i) = a(j, i) * c - a(j, l-1) * s;
 					}
 				}
 			}
 			if (l == k) { /* Convergence. */
-				if (S(k) < 0.0) { /* Singular value is made nonnegative. */
-					S(k) = -S(k);
-					V.view_col(k) = -V.view_col(k);
+				if (w(k) < 0.0) { /* Singular value is made nonnegative. */
+					w(k) = -w(k);
+					v.view_col(k) = -v.view_col(k);
 				}
 				break;
 			}
 			if (its == 30) {
 				throw MaxIteration{};
 			}
-			T x = S(l); /* Shift from bottom 2-by-2 minor. */
-			T y = S(k-1);
-			T z = S(k);
+			T x = w(l); /* Shift from bottom 2-by-2 minor. */
+			T y = w(k-1);
+			T z = w(k);
 			g = rv1[k-1];
-			T h = rv1[k];
-			T f = ((y-z)*(y+z)+(g-h)*(g+h))/(2.0*h*y);
+			h = rv1[k];
+			f = ((y-z)*(y+z)+(g-h)*(g+h))/(2.0*h*y);
 			g = pythag(f,1.0);
 			f = ((x-z)*(x+z)+h*((y/(f+signCopy(g,f)))-h))/x;
-			T c = 1.;
-			T s = 1.; /* Next QR transformation: */
+			c = s = 1.; /* Next QR transformation: */
 			for (int j = l; j < k; j++) {
 				int i = j+1;
 				g = rv1[i];
-				y = S(i);
+				y = w(i);
 				h = s*g;
 				g = c*g;
 				z = pythag(f,h);
@@ -1099,13 +1099,13 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 				h = y*s;
 				y *= c;
 				for (int jj = 0; jj < cols; jj++) {
-					x = V(jj, j);
-					z = V(jj, i);
-					V(jj, j) = x*c+z*s;
-					V(jj, i) = z*c-x*s;
+					x = v(jj, j);
+					z = v(jj, i);
+					v(jj, j) = x*c+z*s;
+					v(jj, i) = z*c-x*s;
 				}
 				z = pythag(f,h);
-				S(j) = z; /* Rotation can be arbitrary if z = 0. */
+				w(j) = z; /* Rotation can be arbitrary if z = 0. */
 				if (z) {
 					z = 1.0/z;
 					c = f*z;
@@ -1114,15 +1114,15 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 				f = c*g+s*y;
 				x = c*y-s*g;
 				for (int jj = 0; jj < rows; jj++) {
-					y = U(jj, j);
-					z = U(jj, i);
-					U(jj, j) = y*c+z*s;
-					U(jj, i) = z*c-y*s;
+					y = a(jj, j);
+					z = a(jj, i);
+					a(jj, j) = y*c+z*s;
+					a(jj, i) = z*c-y*s;
 				}
 			}
 			rv1[l] = 0.;
 			rv1[k] = f;
-			S(k) = x;
+			w(k) = x;
 		}
 	}
 
@@ -1130,7 +1130,7 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 	// slow sorting
 	std::array<std::pair<T, int>, cols> columns;
 	for (int i(0); i < cols; ++i) {
-		columns[i] = std::make_pair(S(i), i);
+		columns[i] = std::make_pair(w(i), i);
 	}
 	sort(columns.begin(), columns.end(), [](std::pair<T, int> const& p1, std::pair<T, int> const& p2) {
 		return p1.first > p2.first;
@@ -1163,10 +1163,8 @@ auto abs(MatrixView<trows, tcols, props, T const> const& _view) -> Matrix<trows,
 			ret(r, c) = abs(_view(r, c));
 		}
 	}
-
 	return ret;
 }
-
 template<int trows, int tcols, typename props, typename T>
 auto sum(MatrixView<trows, tcols, props, T const> const& _view) -> T {
 	T ret = 0.;
