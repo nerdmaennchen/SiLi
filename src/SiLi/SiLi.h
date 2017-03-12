@@ -947,6 +947,7 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 	using namespace ::SiLi::detail;
 	using namespace std;
 	SVD<rows, cols, T> retValue;
+	std::array<T, cols> rv1;
 
 	auto& a = retValue.U;
 	a = _view;
@@ -954,14 +955,13 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 	auto& v = retValue.V;
 	v.diag() = 1.;
 
-	T anorm, c, f, g, h, s, scale;
-
-	std::array<T, cols> rv1;
+	T anorm, g, scale;
 	g = scale = anorm = 0.0; /* Householder reduction to bidiagonal form */
 	for (int i = 0; i < cols; ++i) {
 		int l = i+1;
 		rv1[i] = scale*g;
-		g = s = scale = 0.0;
+		g = scale = 0.0;
+		T s = 0.;
 		if (i < rows) {
 			for (int k = i;k < rows; k++) scale += abs(a(k, i));
 			if (scale) {
@@ -969,9 +969,9 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 					a(k, i) /= scale;
 					s += a(k, i)*a(k, i);
 				}
-				f=a(i, i);
+				T f = a(i, i);
 				g = -signCopy(sqrt(s),f);
-				h=f*g-s;
+				T h = f*g-s;
 				a(i, i)=f-g;
 				for (int j = l; j < cols; j++) {
 					s=0;
@@ -991,9 +991,9 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 					a(i, k) /= scale;
 					s += a(i, k)*a(i, k);
 				}
-				f=a(i, l);
+				T f = a(i, l);
 				g = -signCopy(sqrt(s),f);
-				h=f*g-s;
+				T h = f*g-s;
 				a(i, l)=f-g;
 				for (int k = l; k < cols; k++) rv1[k]=a(i, k)/h;
 				for (int j = l; j < rows; j++) {
@@ -1012,7 +1012,7 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 			for (int j = l; j < cols; j++) /* Double division to avoid possible underflow. */
 				v(j, i) = (a(i, j)/a(i, l)) / rv1[i+1];
 			for (int j = l; j < cols; j++) {
-				s=0.;
+				T s=0.;
 				for (int k = l; k <cols; k++) s += a(i, k)*v(k, j);
 				for (int k = l; k <cols; k++) v(k, j) += s*v(k, i);
 			}
@@ -1025,9 +1025,9 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 		if (w(i)) {
 			T w_inv = 1.0 / w(i);
 			for (int j = l; j < cols; j++) {
-				s = 0.;
+				T s = 0.;
 				for (int k = l; k < rows; k++) s += a(k, i) * a(k, j);
-				f = (s/a(i, i))*w_inv;
+				T f = (s/a(i, i))*w_inv;
 				for (int k = i; k < rows; k++) a(k, j) += f*a(k, i);
 			}
 			for (int j = i; j < rows; j++) a(j, i) *= w_inv;
@@ -1047,13 +1047,13 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 				if ((T)(abs(w(l-1))+anorm) == anorm) break;
 			}
 			if (flag) {
-				c = 0.0; /* Cancellation of rv1[l-1], if l > 1. */
-				s = 1.0;
+				T c = 0.0; /* Cancellation of rv1[l-1], if l > 1. */
+				T s = 1.0;
 				for (int i = l; i < k; i++) {
-					f = s*rv1[i];
+					T f = s*rv1[i];
 					rv1[i] = c*rv1[i];
 					if ((T)(std::abs(f)+anorm) == anorm) break;
-					h = pythag(f,w(i));
+					T h = pythag(f,w(i));
 					w(i) = h;
 					h = 1./h;
 					c = w(i)*h;
@@ -1078,11 +1078,12 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 			T y = w(k-1);
 			T z = w(k);
 			g = rv1[k-1];
-			h = rv1[k];
-			f = ((y-z)*(y+z)+(g-h)*(g+h))/(2.0*h*y);
+			T h = rv1[k];
+			T f = ((y-z)*(y+z)+(g-h)*(g+h))/(2.0*h*y);
 			g = pythag(f,1.0);
 			f = ((x-z)*(x+z)+h*((y/(f+signCopy(g,f)))-h))/x;
-			c = s = 1.; /* Next QR transformation: */
+			T c = 1.;
+			T s = 1.; /* Next QR transformation: */
 			for (int j = l; j < k; j++) {
 				int i = j+1;
 				g = rv1[i];
