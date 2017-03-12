@@ -540,10 +540,9 @@ auto make_diag(MatrixView<rows, 1, Prop, T const> const& _view) -> Matrix<rows, 
 // only works for not overlaping views
 template<int rows, int cols, typename P1, typename P2, typename T>
 void swap(MatrixView<rows, cols, P1, T>& lhs, MatrixView<rows, cols, P2, T>& rhs) {
-	using std::swap;
 	for(int i = 0; i < rows; ++i) {
 		for(int j = 0; j < cols; ++j) {
-			swap(lhs(i, j), rhs(i, j));
+			std::swap(lhs(i, j), rhs(i, j));
 		}
 	}
 }
@@ -894,17 +893,16 @@ auto signCopy(T1 const& t1, T2 const& t2) -> T1 {
 
 template <typename T>
 auto pythag(T a, T b) -> T {
-	using namespace std;
 /* compute (a2 + b2)^1/2 without destructive underflow or overflow */
 	a = std::abs(a);
 	b = std::abs(b);
 	if (a > b) {
-		return a*sqrt(1.0 + (b/a) * (b/a));
+		return a*std::sqrt(1.0 + (b/a) * (b/a));
 	}
 	else if (b == 0.0) {
 		return 0.;
 	} else {
-		return b*sqrt(1.0+(a/b)*(a/b));
+		return b*std::sqrt(1.0+(a/b)*(a/b));
 	}
 }
 }
@@ -912,7 +910,6 @@ auto pythag(T a, T b) -> T {
 template <int rows, int cols, typename Props, typename T>
 auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols, T> {
 	using namespace ::SiLi::detail;
-	using namespace std;
 	SVD<rows, cols, T> retValue;
 	int const m = rows;
 	int const n = cols;
@@ -932,14 +929,14 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 		rv1[i-1] = scale*g;
 		g = s = scale = 0.0;
 		if (i <= m) {
-			for (int k=i;k<=m;k++) scale += abs(a(k-1, i-1));
+			for (int k=i;k<=m;k++) scale += std::abs(a(k-1, i-1));
 			if (scale) {
 				for (int k=i;k<=m;k++) {
 					a(k-1, i-1) /= scale;
 					s += a(k-1, i-1)*a(k-1, i-1);
 				}
 				f=a(i-1, i-1);
-				g = -signCopy(sqrt(s),f);
+				g = -signCopy(std::sqrt(s),f);
 				h=f*g-s;
 				a(i-1, i-1)=f-g;
 				for (j=l;j<=n;j++) {
@@ -954,14 +951,14 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 		w(i-1)=scale *g;
 		g=s=scale=0.0;
 		if (i <= m && i != n) {
-			for (int k=l;k<=n;k++) scale += abs(a(i-1, k-1));
+			for (int k=l;k<=n;k++) scale += std::abs(a(i-1, k-1));
 			if (scale) {
 				for (int k=l;k<=n;k++) {
 					a(i-1, k-1) /= scale;
 					s += a(i-1, k-1)*a(i-1, k-1);
 				}
 				f=a(i-1, l-1);
-				g = -signCopy(sqrt(s),f);
+				g = -signCopy(std::sqrt(s),f);
 				h=f*g-s;
 				a(i-1, l-1)=f-g;
 				for (int k=l;k<=n;k++) rv1[k-1]=a(i-1, k-1)/h;
@@ -973,7 +970,7 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 				for (int k=l;k<=n;k++) a(i-1, k-1) *= scale;
 			}
 		}
-		anorm = std::max(anorm,(abs(w(i-1))+abs(rv1[i-1])));
+		anorm = std::max(anorm,(std::abs(w(i-1))+std::abs(rv1[i-1])));
 	}
 	for (int i=n;i>=1;i--) { /* Accumulation of right-hand transformations. */
 		if (i < n) {
@@ -1014,11 +1011,11 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 			int flag=1;
 			for (l=k;l>=1;l--) { /* Test for splitting. */
 				nm=l-1; /* Note that rv1[0] is always zero. */
-				if ((T)(abs(rv1[l-1])+anorm) == anorm) {
+				if ((T)(std::abs(rv1[l-1])+anorm) == anorm) {
 					flag=0;
 					break;
 				}
-				if ((T)(abs(w(nm-1))+anorm) == anorm) break;
+				if ((T)(std::abs(w(nm-1))+anorm) == anorm) break;
 			}
 			if (flag) {
 				c=0.0; /* Cancellation of rv1[l-1], if l > 1. */
@@ -1026,7 +1023,7 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 				for (int i=l;i<=k;i++) {
 					f=s*rv1[i-1];
 					rv1[i-1]=c*rv1[i-1];
-					if ((T)(abs(f)+anorm) == anorm) break;
+					if ((T)(std::abs(f)+anorm) == anorm) break;
 					g=w(i-1);
 					h=pythag(f,g);
 					w(i-1)=h;
