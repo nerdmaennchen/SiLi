@@ -5,6 +5,7 @@
 #include <complex>
 #include <iterator>
 #include <type_traits>
+#include <iostream>
 
 namespace SiLi {
 
@@ -258,7 +259,7 @@ public:
 		return std::sqrt(normSqr());
 	}
 
-	auto normalize() const -> Matrix<trows, tcols, T> {
+	auto normalized() const -> Matrix<trows, tcols, T> {
 		return (*this) * (1./norm());
 	}
 
@@ -290,15 +291,15 @@ public:
 template<int trows, int tcols, typename prop, typename T>
 class MatrixView<trows, tcols, prop, T> : public MatrixView<trows, tcols, prop, T const> {
 private:
-	using Parent = MatrixView<trows, tcols, prop, T const>;
+	using CView = MatrixView<trows, tcols, prop, T const>;
 protected:
 	T* const basePtr;
 
 public:
-	explicit MatrixView(T* base) : Parent(base), basePtr(base) {}
+	explicit MatrixView(T* base) : CView(base), basePtr(base) {}
 
-	MatrixView(MatrixView& rhs) : Parent(rhs), basePtr(rhs.basePtr) {}
-	MatrixView(MatrixView&& rhs) : Parent(rhs), basePtr(rhs.basePtr) {}
+	MatrixView(MatrixView& rhs) : CView(rhs), basePtr(rhs.basePtr) {}
+	MatrixView(MatrixView&& rhs) : CView(rhs), basePtr(rhs.basePtr) {}
 
 	// pass through
 	using MatrixView<trows, tcols, prop, T const>::operator();
@@ -327,9 +328,8 @@ public:
 		return operator()(row, 0);
 	}
 
-	
 	// view access
-	using Parent::view;
+	using CView::view;
 	template<int subRows, int subCols>
 	auto view(int startR, int startC) -> MatrixView<subRows, subCols, prop, T> {
 		static_assert(subRows <= trows, "rows must be smaller or equal to the current view");
@@ -452,13 +452,13 @@ public:
 	}
 
 	// transposed view
-	using Parent::t;
+	using CView::t;
 	auto t() -> MatrixView<tcols, trows, typename prop::Transposed, T> {
 		return MatrixView<tcols, trows, typename prop::Transposed, T> {basePtr};
 	}
 
 	// diagonal view
-	using Parent::diag;
+	using CView::diag;
 	auto diag() -> MatrixView<(tcols < trows)?tcols:trows, 1, typename prop::Diag, T> {
 		return MatrixView<(tcols < trows)?tcols:trows, 1, typename prop::Diag, T> {basePtr};
 	}
@@ -467,20 +467,19 @@ public:
 template<int rows, int cols, typename T>
 class Matrix<rows, cols, T> : public MatrixView<rows, cols, class Properties<cols>, T> {
 	T vals[rows][cols];
-	using SuperType = MatrixView<rows, cols, Properties<cols>, T>;
 public:
-	using View  = SuperType;
+	using View  = MatrixView<rows, cols, Properties<cols>, T>;
 	using CView = MatrixView<rows, cols, Properties<cols>, T const>;
 
 
-	Matrix() : SuperType(&(vals[0][0])) {}
+	Matrix() : View(&(vals[0][0])) {}
 
-	Matrix(T initVal) : SuperType(&(vals[0][0]))  {
-		((SuperType*)(this))->operator=(initVal);
+	Matrix(T initVal) : View(&(vals[0][0]))  {
+		((View*)(this))->operator=(initVal);
 	}
 
 	template<typename T2>
-	Matrix(T2 const (&list)[rows*cols]) : SuperType(&(vals[0][0])) {
+	Matrix(T2 const (&list)[rows*cols]) : View(&(vals[0][0])) {
 		T2 const* iter = &(list[0]);
 		for (int r(0); r < rows; ++r) {
 			for (int c(0); c < cols; ++c) {
@@ -489,7 +488,7 @@ public:
 		}
 	}
 
-	Matrix(T const (&list)[rows][cols]) : SuperType(&(vals[0][0])) {
+	Matrix(T const (&list)[rows][cols]) : View(&(vals[0][0])) {
 		for (int r(0); r < rows; ++r) {
 			for (int c(0); c < cols; ++c) {
 				(*this)(r, c) = T(list[r][c]);
@@ -497,7 +496,7 @@ public:
 		}
 	}
 
-	Matrix(Matrix&& other) : SuperType(&(vals[0][0])) {
+	Matrix(Matrix&& other) : View(&(vals[0][0])) {
 		for (int r(0); r < rows; ++r) {
 			for (int c(0); c < cols; ++c) {
 				(*this)(r, c) = other(r, c);
@@ -506,17 +505,16 @@ public:
 	}
 
 
-	Matrix(Matrix const& other) : SuperType(&(vals[0][0])) {
+	Matrix(Matrix const& other) : View(&(vals[0][0])) {
 		for (int r(0); r < rows; ++r) {
 			for (int c(0); c < cols; ++c) {
 				(*this)(r, c) = other(r, c);
 			}
 		}
 	}
-
 
 	template<typename Props>
-	Matrix(MatrixView<rows, cols, Props, T const> const& other) : SuperType(&(vals[0][0])) {
+	Matrix(MatrixView<rows, cols, Props, T const> const& other) : View(&(vals[0][0])) {
 		for (int r(0); r < rows; ++r) {
 			for (int c(0); c < cols; ++c) {
 				(*this)(r, c) = other(r, c);
@@ -526,7 +524,7 @@ public:
 
 	template<typename Props>
 	auto operator=(MatrixView<rows, cols, Props, T const> const& other) & -> Matrix& {
-		SuperType::operator=(other);
+		View::operator=(other);
 		return *this;
 	}
 
