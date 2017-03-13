@@ -7,9 +7,9 @@ using M = Matrix<rows, cols>;
 
 
 TEST(SiLi, init0) {
-	M< 0, 0>  m1({});
-	M<10, 0>  m2({});
-	M< 0, 10> m3({});
+	M< 0, 0>  m1(0);
+	M<10, 0>  m2(0);
+	M< 0, 10> m3(0);
 
 	EXPECT_EQ(0, m1.num_rows());
 	EXPECT_EQ(0, m1.num_cols());
@@ -22,9 +22,9 @@ TEST(SiLi, init0) {
 }
 
 TEST(SiLi, init1) {
-	M< 1, 1>  m1({});
-	M<10, 1>  m2({});
-	M< 1, 10> m3({});
+	M< 1, 1>  m1(0);
+	M<10, 1>  m2(0);
+	M< 1, 10> m3(0);
 
 	EXPECT_EQ(1, m1.num_rows());
 	EXPECT_EQ(1, m1.num_cols());
