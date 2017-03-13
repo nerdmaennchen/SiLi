@@ -57,6 +57,23 @@ namespace SiLi {
 		Quaternion(Matrix<4, 4, T> const& mat) {
 			fromMatrix(mat.template view<3, 3>(0, 0));
 		}
+		/**
+		 * computes quaternion for minimal rotation from v1 to v2
+		 */
+		Quaternion(Matrix<3, 1, T> v1, Matrix<3, 1, T> v2) {
+			v1 = v1.normalize();
+			v2 = v2.normalize();
+
+			real() = 1. + v1.t() * v2;
+			img()  = cross(v1, v2);
+
+			auto n = norm();
+			if (std::abs(n) < 1e-9) {
+				real() = 1.;
+				img() = 0;
+			}
+			*this = normalize();
+		}
 	private:
 		void fromMatrix(Matrix<3, 3, T> const& mat) {
 			auto trace = sum(mat.diag());
@@ -172,6 +189,14 @@ namespace SiLi {
 			*this = *this * q;
 			return *this;
 		}
+
+		auto rotate(SiLi::Matrix<3, 1, T> const& v) const -> SiLi::Matrix<3, 1, T> {
+			Quaternion q;
+			q.real() = 0.;
+			q.img()  = v;
+			return (*this * q * this->conjugate()).img();
+		}
+
 
 
 		auto slerp(Quaternion<T> v1, T factor) -> Quaternion {

@@ -93,46 +93,16 @@ TEST(SiLi, mat_to_quat) {
 	EXPECT_NEAR(e(1), q(1), 1e-9);
 	EXPECT_NEAR(e(2), q(2), 1e-9);
 	EXPECT_NEAR(e(3), q(3), 1e-9);
-
 }
 
+TEST(SiLi, quat_minimalrotation) {
+	SiLi::Matrix<3, 1, double> v1 ({1., 0., 0.});
+	SiLi::Matrix<3, 1, double> v2 ({0.5, 0.5, 0.});
 
+	SiLi::Quaternion<double> q (v1, v2);
 
+	auto v3 = q.rotate(v1);
 
-
-
-
-
-
-TEST(SiLi, quat_test) {
-	SiLi::Quaternion<double> q1, q2;
-	q1 += q2;
-	auto q3 = q1 + q2;
-	auto q4 = q1 - q3;
-	q1 -= q4;
-	auto q5 = -q1;
-	auto q6 = q5 * 5.;
-	q6 *= 3.;
-	auto r = q2.norm();
-	(void)r;
-	auto q7 = q6.conjugate();
-
-	auto q8 = q7 * q6;
-	q8 *= q7;
-
-	auto q9 = q8.slerp(q7, 0.5);
-	auto a = q8.dot(q9);
-	(void)a;
-
-	SiLi::Quaternion<double> q10;
-
-	auto mat = q8.mat();
-	SiLi::Quaternion<double> q11(mat.view<3, 3>(0, 0));
-
-	std::cout << "q10: " << q10 << "\n";
-	std::cout << "q11: " << q11 << "\n";
-	std::cout << "mat: " << mat << "\n";
-
-
+	EXPECT_NEAR(double(v2.t() * v3) * (1./ (v2.norm() * v3.norm())), 1., 1e-9);
 }
 

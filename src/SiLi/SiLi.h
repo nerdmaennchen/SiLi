@@ -258,6 +258,10 @@ public:
 		return std::sqrt(normSqr());
 	}
 
+	auto normalize() const -> Matrix<trows, tcols, T> {
+		return (*this) * (1./norm());
+	}
+
 	// compute svd so that *this = svd.U * make_diag(svd.S) * svd.V.t()
 	// Will throw SiLi::MaxIteration if maximum of iteration is reached
 	auto svd() const -> SVD<trows, tcols, T>;

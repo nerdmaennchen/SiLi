@@ -12,8 +12,9 @@ It's all contained within a single header file and does not depend ony any 3rd p
   * Element wise operations: multiplikation, assignment
   * views on matrices
   * determinant
-  * inverse
-  * norm
+  * inverse()
+  * norm()
+  * normalize()
   * svd decomposition
   * transpose (as a view)
   * diagnoal acces (as a view)
@@ -26,8 +27,11 @@ It's all contained within a single header file and does not depend ony any 3rd p
 * Quaternion operations:
   * conversion from/to matrices
   * multipikation, addition, substracton
-  * norm
-  * normalize
-  * conjugate
-  * dot
-  * slerp
+  * img(), real()
+  * norm()
+  * normalize()
+  * conjugate()
+  * dot()
+  * slerp()
+  * rotate()
+  * computation of minimal rotation between two vectors
