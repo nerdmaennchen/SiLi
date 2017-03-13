@@ -86,6 +86,7 @@ namespace SiLi {
 				mValue(2) = (mat(1, 2) + mat(2, 1)) / s;
 				mValue(3) = 0.25 * s;
 			}
+			normalize();
 		}
 
 	public:
