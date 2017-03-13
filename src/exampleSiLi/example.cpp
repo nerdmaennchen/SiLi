@@ -10,6 +10,11 @@ int main() {
 	std::cout << b * c << std::endl;
 	std::cout << (b * c).t() << std::endl;
 
+	for (auto row : b.rows<1,3>()) {
+		std::cout << row;
+	}
+	std::cout << std::endl;
+
 	std::cout << SiLi::Matrix<1, 1>(.1f).inv() << std::endl;
 
 	auto view = b.view<3, 1>(0, 0);
