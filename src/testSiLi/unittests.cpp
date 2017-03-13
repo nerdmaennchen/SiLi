@@ -749,3 +749,74 @@ TEST(SiLi, matrixView_join_cols) {
 	EXPECT_EQ(121., m3(2, 0));
 	EXPECT_EQ(122., m3(2, 1));
 }
+
+
+TEST(SiLi, matrixView_rowRange1) {
+	M<4, 2>  m({
+			{00., 01.},
+			{10., 11.},
+			{20., 21.},
+			{30., 31.}
+	});
+
+	auto rows = m.rows<0, 3, 2>();
+	EXPECT_EQ(rows.size(), 2);
+
+	EXPECT_EQ(rows[0](0, 0), 00.);
+	EXPECT_EQ(rows[0](0, 1), 01.);
+
+	EXPECT_EQ(rows[1](0, 0), 20.);
+	EXPECT_EQ(rows[1](0, 1), 21.);
+}
+
+TEST(SiLi, matrixView_rowRange2) {
+	M<4, 2>  m({
+			{00., 01.},
+			{10., 11.},
+			{20., 21.},
+			{30., 31.}
+	});
+
+	auto rows = m.rows<3, 0, -2>();
+	EXPECT_EQ(rows.size(), 2);
+
+	EXPECT_EQ(rows[0](0, 0), 30.);
+	EXPECT_EQ(rows[0](0, 1), 31.);
+
+	EXPECT_EQ(rows[1](0, 0), 10.);
+	EXPECT_EQ(rows[1](0, 1), 11.);
+
+}
+
+
+TEST(SiLi, matrixView_colRange1) {
+	M<2, 4>  m({
+			{00., 01. , 02., 03.},
+			{10., 11. , 12., 13.}
+	});
+
+	auto cols = m.cols<0, 3, 2>();
+	EXPECT_EQ(cols.size(), 2);
+
+	EXPECT_EQ(cols[0](0, 0), 00.);
+	EXPECT_EQ(cols[0](1, 0), 10.);
+
+	EXPECT_EQ(cols[1](0, 0), 02.);
+	EXPECT_EQ(cols[1](1, 0), 12.);
+}
+
+TEST(SiLi, matrixView_colRange2) {
+	M<2, 4>  m({
+			{00., 01. , 02., 03.},
+			{10., 11. , 12., 13.}
+	});
+
+	auto cols = m.cols<3, 0, -2>();
+	EXPECT_EQ(cols.size(), 2);
+
+	EXPECT_EQ(cols[0](0, 0), 03.);
+	EXPECT_EQ(cols[0](1, 0), 13.);
+
+	EXPECT_EQ(cols[1](0, 0), 01.);
+	EXPECT_EQ(cols[1](1, 0), 11.);
+}

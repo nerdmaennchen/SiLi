@@ -10,7 +10,7 @@ int main() {
 	std::cout << b * c << std::endl;
 	std::cout << (b * c).t() << std::endl;
 
-	for (auto row : b.rows<1,3>()) {
+	for (auto row : b.rows<1,2>()) {
 		std::cout << row;
 	}
 	std::cout << std::endl;

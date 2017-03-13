@@ -115,7 +115,7 @@ struct index {
 	template<int n>
 	using prepend = index<n, I...>;
 	constexpr int size() {
-		return sizeof...(I)+1;
+		return sizeof...(I);
 	}
 };
 
@@ -145,6 +145,36 @@ constexpr auto indexer() -> typename make_increment<start, end, stride, (start>e
 template<int start, int end, int stride, typename std::enable_if<(stride<0)>::type* = nullptr>
 constexpr auto indexer() -> typename make_decrement<start, end, stride, (start<end or stride>0)>::type {
 	return {};
+}
+
+
+template<int rows, int cols, typename prop, typename T, int ...nbrs>
+auto createRowViews(MatrixView<rows, cols, prop, T const> const& view, detail::index<nbrs...>) -> std::array<MatrixView<1, cols, prop, T const>, sizeof...(nbrs)> {
+	auto retArray = std::array<MatrixView<1, cols, prop, T const>, sizeof...(nbrs)> {
+		view.view_row(nbrs)...
+	};
+	return retArray;
+}
+template<int rows, int cols, typename prop, typename T, int ...nbrs>
+auto createRowViews(MatrixView<rows, cols, prop, T>& view, detail::index<nbrs...>) -> std::array<MatrixView<1, cols, prop, T>, sizeof...(nbrs)> {
+	auto retArray = std::array<MatrixView<1, cols, prop, T>, sizeof...(nbrs)> {
+		view.view_row(nbrs)...
+	};
+	return retArray;
+}
+template<int rows, int cols, typename prop, typename T, int ...nbrs>
+auto createColViews(MatrixView<rows, cols, prop, T const> const& view, detail::index<nbrs...>) -> std::array<MatrixView<rows, 1, prop, T const>, sizeof...(nbrs)> {
+	auto retArray = std::array<MatrixView<rows, 1, prop, T const>, sizeof...(nbrs)> {
+		view.view_col(nbrs)...
+	};
+	return retArray;
+}
+template<int rows, int cols, typename prop, typename T, int ...nbrs>
+auto createColViews(MatrixView<rows, cols, prop, T>& view, detail::index<nbrs...>) -> std::array<MatrixView<rows, 1, prop, T>, sizeof...(nbrs)> {
+	auto retArray = std::array<MatrixView<rows, 1, prop, T>, sizeof...(nbrs)> {
+		view.view_col(nbrs)...
+	};
+	return retArray;
 }
 }
 
@@ -228,12 +258,22 @@ public:
 	}
 
 	// array with view on a range of rows (inclusive end)
-	template<int start=0, int end=trows, int stride=1>
-	auto rows() const -> std::array<MatrixView<1, tcols, prop, T const>, detail::indexer<start, end, stride>().size()>;
+	template<int start=0, int end=trows-1, int stride=1>
+	auto rows() const -> decltype(detail::createRowViews(*this, detail::indexer<start, end, stride>())) {
+		static_assert(start >= 0 and end >= 0, "bounds must be positive");
+		static_assert(start < trows and end < trows, "bounds must be smaller than the number of rows");
+		static_assert(stride != 0, "stride must be different from 0");
+		return createRowViews(*this, detail::indexer<start, end, stride>());
+	}
 
 	// array with view on a range of cols (inclusive end)
-	template<int start=0, int end=tcols, int stride=1>
-	auto cols() const -> std::array<MatrixView<trows, 1, prop, T const>, detail::indexer<start, end, stride>().size()>;
+	template<int start=0, int end=tcols-1, int stride=1>
+	auto cols() const -> decltype(detail::createColViews(*this, detail::indexer<start, end, stride>())) {
+		static_assert(start >= 0 and end >= 0, "bounds must be positive");
+		static_assert(start < tcols and end < tcols, "bounds must be smaller than the number of rows");
+		static_assert(stride != 0, "stride must be different from 0");
+		return createColViews(*this, detail::indexer<start, end, stride>());
+	}
 
 	// read only iterator
 	auto begin() const -> MatrixIterator<MatrixView<trows, tcols, prop, T const> const> {
@@ -390,12 +430,22 @@ public:
 	}
 
 	// array with view on a range of rows (inclusive end)
-	template<int start=0, int end=trows, int stride=1>
-	auto rows() -> std::array<MatrixView<1, tcols, prop, T>, detail::indexer<start, end, stride>().size()>;
+	template<int start=0, int end=trows-1, int stride=1>
+	auto rows() -> decltype(detail::createRowViews(*this, detail::indexer<start, end, stride>())) {
+		static_assert(start >= 0 and end >= 0, "bounds must be positive");
+		static_assert(start < trows and end < trows, "bounds must be smaller than the number of rows");
+		static_assert(stride != 0, "stride must be different from 0");
+		return detail::createRowViews(*this, detail::indexer<start, end, stride>());
+	}
 
 	// array with view on a range of cols (inclusive end)
-	template<int start=0, int end=tcols, int stride=1>
-	auto cols() -> std::array<MatrixView<trows, 1, prop, T>, detail::indexer<start, end, stride>().size()>;
+	template<int start=0, int end=tcols-1, int stride=1>
+	auto cols() -> decltype(detail::createColViews(*this, detail::indexer<start, end, stride>())) {
+		static_assert(start >= 0 and end >= 0, "bounds must be positive");
+		static_assert(start < tcols and end < tcols, "bounds must be smaller than the number of rows");
+		static_assert(stride != 0, "stride must be different from 0");
+		return detail::createColViews(*this, detail::indexer<start, end, stride>());
+	}
 
 
 
@@ -696,80 +746,6 @@ auto adjugateMat(MatrixView<rows, cols, Props, T const> const& _view) -> Matrix<
 		}
 	}
 	return retMat;
-}
-
-/**
-  * create all row view
-  */
-
-template<int rows, int cols, typename prop, typename T, int ...nbrs>
-auto createRowViews(MatrixView<rows, cols, prop, T const> const& view, detail::index<nbrs...>) -> std::array<MatrixView<1, cols, prop, T const>, sizeof...(nbrs)> {
-	auto retArray = std::array<MatrixView<1, cols, prop, T const>, sizeof...(nbrs)> {
-		view.view_row(nbrs)...
-	};
-	return retArray;
-}
-
-template<int rows, int cols, typename prop, typename T, int ...nbrs>
-auto createRowViews(MatrixView<rows, cols, prop, T>& view, detail::index<nbrs...>) -> std::array<MatrixView<1, cols, prop, T>, sizeof...(nbrs)> {
-	auto retArray = std::array<MatrixView<1, cols, prop, T>, sizeof...(nbrs)> {
-		view.view_row(nbrs)...
-	};
-	return retArray;
-}
-
-template<int trows, int tcols, typename prop, typename T>
-template<int start, int end, int stride>
-auto MatrixView<trows, tcols, prop, T const>::rows() const -> std::array<MatrixView<1, tcols, prop, T const>, detail::indexer<start, end, stride>().size()> {
-	static_assert(start >= 0, "lower bound must be positive");
-	static_assert(end <= trows, "upper bound must be smaller or equal than the number of rows");
-	static_assert(end > start, "cannot create a set of rows this way (upper bound is exclusive)");
-	static_assert(stride != 0, "stride must be different from 0");
-	return createRowViews(*this, detail::indexer<start, end, stride>());
-}
-
-template<int trows, int tcols, typename prop, typename T>
-template<int start, int end, int stride>
-auto MatrixView<trows, tcols, prop, T>::rows() -> std::array<MatrixView<1, tcols, prop, T>, detail::indexer<start, end, stride>().size()> {
-	static_assert(start >= 0, "lower bound must be positive");
-	static_assert(end <= trows, "upper bound must be smaller or equal than the number of rows");
-	static_assert(end > start, "cannot create a set of rows this way (upper bound is exclusive)");
-	static_assert(stride != 0, "stride must be different from 0");
-	return createRowViews(*this, indexer<start, end, stride>());
-}
-
-template<int rows, int cols, typename prop, typename T, int ...nbrs>
-auto createColViews(MatrixView<rows, cols, prop, T const> const& view, detail::index<nbrs...>) -> std::array<MatrixView<rows, 1, prop, T const>, sizeof...(nbrs)> {
-	auto retArray = std::array<MatrixView<rows, 1, prop, T const>, sizeof...(nbrs)> {
-		view.view_col(nbrs)...
-	};
-	return retArray;
-}
-
-template<int rows, int cols, typename prop, typename T, int ...nbrs>
-auto createColViews(MatrixView<rows, cols, prop, T>& view, detail::index<nbrs...>) -> std::array<MatrixView<rows, 1, prop, T>, sizeof...(nbrs)> {
-	auto retArray = std::array<MatrixView<rows, 1, prop, T>, sizeof...(nbrs)> {
-		view.view_col(nbrs)...
-	};
-	return retArray;
-}
-
-template<int trows, int tcols, typename prop, typename T>
-template<int start, int end>
-auto MatrixView<trows, tcols, prop, T const>::cols() const -> std::array<MatrixView<trows, 1, prop, T const>, detail::indexer<start, end, stride>().size()> {
-	static_assert(start >= 0, "lower bound must be positive");
-	static_assert(end <= tcols, "upper bound must be smaller or equal than the number of cols");
-	static_assert(end > start, "cannot create a set of cols this way (upper bound is exclusive)");
-	return createColViews(*this, indexer<start, end>());
-}
-
-template<int trows, int tcols, typename prop, typename T>
-template<int start, int end>
-auto MatrixView<trows, tcols, prop, T>::cols() -> std::array<MatrixView<trows, 1, prop, T>, detail::indexer<start, end, stride>().size()> {
-	static_assert(start >= 0, "lower bound must be positive");
-	static_assert(end <= tcols, "upper bound must be smaller or equal than the number of cols");
-	static_assert(end > start, "cannot create a set of cols this way (upper bound is exclusive)");
-	return createColViews(*this, indexer<start, end>());
 }
 
 /**
