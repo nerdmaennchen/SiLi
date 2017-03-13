@@ -1,5 +1,3 @@
-#include <cmath>
-#include <cstdlib>
 #include <SiLi/SiLi.h>
 #include <gtest/gtest.h>
 

@@ -323,7 +323,9 @@ public:
 		return operator()(row, 0);
 	}
 
+	
 	// view access
+	using Parent::view;
 	template<int subRows, int subCols>
 	auto view(int startR, int startC) -> MatrixView<subRows, subCols, prop, T> {
 		static_assert(subRows <= trows, "rows must be smaller or equal to the current view");
@@ -446,12 +448,13 @@ public:
 	}
 
 	// transposed view
-	using MatrixView<trows, tcols, prop, T const>::t;
+	using Parent::t;
 	auto t() -> MatrixView<tcols, trows, typename prop::Transposed, T> {
 		return MatrixView<tcols, trows, typename prop::Transposed, T> {basePtr};
 	}
 
 	// diagonal view
+	using Parent::diag;
 	auto diag() -> MatrixView<(tcols < trows)?tcols:trows, 1, typename prop::Diag, T> {
 		return MatrixView<(tcols < trows)?tcols:trows, 1, typename prop::Diag, T> {basePtr};
 	}
@@ -915,6 +918,20 @@ template<int rows, int cols, typename Props, typename T>
 auto operator*(T const& lhs, MatrixView<rows, cols, Props, T const> const& rhs) -> Matrix<rows, cols, T> {
 	return rhs * lhs;
 }
+
+/**
+ * cross product for 3x1 and 3x1 matrices
+ */
+// compute 1x1 determinant
+template<typename P1, typename P2, typename T>
+auto cross(MatrixView<3, 1, P1, T const> const& a, MatrixView<3, 1, P2, T const> const& b) -> Matrix<3, 1, T> {
+	Matrix<3, 1, T> retValue;
+	retValue(0) = a(1) * b(2) - a(2) * b(1);
+	retValue(1) = a(2) * b(0) - a(0) * b(2);
+	retValue(2) = a(0) * b(1) - a(1) * b(0);
+	return retValue;
+}
+
 
 /*
  * Computing svd
