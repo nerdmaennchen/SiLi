@@ -1,6 +1,7 @@
 # SiLi
 A simple and basic linear algebra library for c++ using little code.
-The best part ist: 
+
+The best part is: 
 It's all contained within a single header file and does not depend ony any 3rd party library. 
 
 # Features
