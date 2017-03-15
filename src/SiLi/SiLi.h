@@ -1238,6 +1238,6 @@ std::ostream& operator<< (std::ostream& stream, SiLi::MatrixView<rows, cols, Pro
 }
 
 template<int rows, typename T = DefaultType>
-using Vector = Matrix<rows, 1, T>
+using Vector = Matrix<rows, 1, T>;
 
 }
