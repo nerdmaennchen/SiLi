@@ -5,7 +5,6 @@
 #include <complex>
 #include <iterator>
 #include <type_traits>
-#include <iostream>
 
 namespace SiLi {
 
