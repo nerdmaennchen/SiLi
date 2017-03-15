@@ -1237,7 +1237,7 @@ std::ostream& operator<< (std::ostream& stream, SiLi::MatrixView<rows, cols, Pro
 	return stream;
 }
 
-
-
+template<int rows, typename T = DefaultType>
+using Vector = Matrix<rows, 1, T>
 
 }
