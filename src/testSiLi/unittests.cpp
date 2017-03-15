@@ -1,6 +1,8 @@
 #include <SiLi/SiLi.h>
 #include <gtest/gtest.h>
 
+#if __GNUC__ > 4
+
 using namespace SiLi;
 template <int rows, int cols>
 using M = Matrix<rows, cols>;
@@ -820,3 +822,9 @@ TEST(SiLi, matrixView_colRange2) {
 	EXPECT_EQ(cols[1](0, 0), 01.);
 	EXPECT_EQ(cols[1](1, 0), 11.);
 }
+#else
+	TEST(SiLi, gcc4) {
+		EXPECT_TRUE(false); // gcc4 is not supported
+	}
+
+#endif

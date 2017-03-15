@@ -1,6 +1,8 @@
 #include <SiLi/SiLi-Quaternion.h>
 #include <gtest/gtest.h>
 
+#if __GNUC__ > 4
+
 TEST(SiLi, quat_init) {
 	SiLi::Quaternion<double> q1;
 	EXPECT_EQ(q1(0), 1.);
@@ -104,3 +106,4 @@ TEST(SiLi, quat_minimalrotation) {
 	EXPECT_NEAR(double(v2.t() * v3) * (1./ (v2.norm() * v3.norm())), 1., 1e-9);
 }
 
+#endif
