@@ -732,9 +732,11 @@ auto minorMat(MatrixView<rows, cols, Props, T const> const& _view, int _row, int
 // compute adjugated matrix
 template <int rows, int cols, typename Props, typename T>
 auto adjugateMat(MatrixView<rows, cols, Props, T const> const& _view) -> Matrix<rows, cols, T> {
-	Matrix<rows, cols, T> retMat;
+
+	Matrix<rows, cols, T> retMat{1};
+
 	if (cols == 1) {
-		return {1};
+		return retMat;
 	}
 
 	for(int i = 0; i < rows; ++i) {
