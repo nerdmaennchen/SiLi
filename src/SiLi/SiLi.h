@@ -246,7 +246,6 @@ constexpr auto add_size(int v1, int v2) -> int {
 }
 
 
-
 /** Const MatrixView with all methods that are allowed to be operated on a const matrix view
  */
 template<int trows, int tcols, typename prop, typename T>
@@ -338,6 +337,10 @@ public:
 		view.mCols = cols;
 		view.mStride = this->stride();
 		return view;
+	}
+
+	auto operator()(int startR, int startC, int rows, int cols) const -> decltype(view(startR, startC, rows, cols)) {
+		return view(startR, startC, rows, cols);
 	}
 
 	template <bool dynamic = prop::dynamic, typename std::enable_if<not dynamic>::type* = nullptr>
@@ -593,6 +596,10 @@ public:
 		return view;
 	}
 
+	auto operator()(int startR, int startC, int rows, int cols) -> decltype(view(startR, startC, rows, cols)) {
+		return view(startR, startC, rows, cols);
+	}
+
 
 	template <bool dynamic = prop::dynamic, typename std::enable_if<not dynamic>::type* = nullptr>
 	auto view_row(int startR) -> MatrixView<1, tcols, prop, T> {
@@ -675,8 +682,8 @@ public:
 
 	template <typename oProp>
 	auto operator-=(MatrixView<trows, tcols, oProp, T const> const& rhs) -> MatrixView& {
-		for (int row(0); row < trows; ++row) {
-			for (int col(0); col < tcols; ++col) {
+		for (int row(0); row < this->num_rows(); ++row) {
+			for (int col(0); col < this->num_cols(); ++col) {
 				(*this)(row, col) -= rhs(row, col);
 			}
 		}
@@ -686,8 +693,8 @@ public:
 	// element wise product
 	template<typename oProp>
 	auto operator&=(MatrixView<trows, tcols, oProp, T const> const& _view) -> MatrixView& {
-		for (int row(0); row < trows; ++row) {
-			for (int col(0); col < tcols; ++col) {
+		for (int row(0); row < this->num_rows(); ++row) {
+			for (int col(0); col < this->num_cols(); ++col) {
 				(*this)(row, col) *= _view(row, col);
 			}
 		}
@@ -698,8 +705,8 @@ public:
 	template<typename oProp>
 	auto operator&(MatrixView<trows, tcols, oProp, T const> const& _view) -> Matrix<trows, tcols, T> {
 		Matrix<trows, tcols, T> retMat;
-		for (int row(0); row < trows; ++row) {
-			for (int col(0); col < tcols; ++col) {
+		for (int row(0); row < this->num_rows(); ++row) {
+			for (int col(0); col < this->num_cols(); ++col) {
 				retMat(row, col) = (*this)(row, col) * _view(row, col);
 			}
 		}
@@ -775,7 +782,7 @@ public:
 
 	Matrix() : View(&(vals[0][0])) {}
 
-	Matrix(int _rows, int _cols) : Matrix() {
+	Matrix(int /*_rows*/, int /*_cols*/) : Matrix() {
 		// this function is needed for compatiblity of dynamic matrices
 	}
 
@@ -906,6 +913,7 @@ public:
 		}
 	}
 
+	using View::operator=;
 	template<int oth_trows, int oth_tcols, typename Props>
 	auto operator=(MatrixView<oth_trows, oth_tcols, Props, T const> const& other) & -> Matrix& {
 		resize(other.num_rows(), other.num_cols(), other.num_cols());
@@ -1003,15 +1011,16 @@ void swap(MatrixView<rows, cols, P1, T>& lhs, MatrixView<rows, cols, P2, T>& rhs
 // lu decomposition, returns L value
 template <int rows, int cols, typename Props, typename T>
 auto luDecomposition_L(MatrixView<rows, cols, Props, T const> const& _mat) -> Matrix<rows, cols, T> {
-	Matrix<rows, cols, T> L{0};
+	Matrix<rows, cols, T> L(_mat.num_rows(), _mat.num_cols());
+	L = T(0.);
 
-	for (int k=0; k<rows; ++k) {
+	for (int k=0; k<_mat.num_rows(); ++k) {
 		auto kRow = L.view_row(k);
 		auto kCol = L.view_col(k);
-		for (int i=k;i<rows;++i) {
+		for (int i=k;i<_mat.num_rows();++i) {
 			L(k, i) = _mat(k, i) - kRow * L.view_col(i);
 		}
-		for (int i=k+1; i<rows;++i) {
+		for (int i=k+1; i<_mat.num_rows();++i) {
 			L(i, k) = (_mat(i, k) - T(L.view_row(i) * kCol)) / L(k, k);
 		}
 	}
@@ -1020,17 +1029,17 @@ auto luDecomposition_L(MatrixView<rows, cols, Props, T const> const& _mat) -> Ma
 
 // compute minor matrix
 template <int rows, int cols, typename Props, typename T>
-auto minorMat(MatrixView<rows, cols, Props, T const> const& _view, int _row, int _col) -> Matrix<rows-1, cols-1, T> {
+auto minorMat(MatrixView<rows, cols, Props, T const> const& _view, int _row, int _col) -> Matrix<(rows>=0)?rows-1:-1, (cols>=0)?cols-1:-1, T> {
 
 	auto retRows = _view.num_rows()-1;
 	auto retCols = _view.num_cols()-1;
 
-	Matrix<rows-1, cols-1, T> retMat(retRows, retCols);
+	Matrix<(rows>=0)?rows-1:-1, (cols>=0)?cols-1:-1, T> retMat(retRows, retCols);
 
-	retMat.view(   0,    0,         _row, _col)         = _view.view(     0,      0,           _row, _col);
-	retMat.view(_row,    0, retRows-_row, _col)         = _view.view(_row+1,      0, retRows-_row-1, _col);
-	retMat.view(   0, _col,         _row, retCols-_col) = _view.view(     0, _col+1,           _row, retCols-_col-1);
-	retMat.view(_row, _col, retRows-_row, retCols-_col) = _view.view(_row+1, _col+1, retRows-_row-1, retCols-_col-1);
+	retMat(   0,    0,         _row, _col)         = _view(     0,      0,           _row, _col);
+	retMat(_row,    0, retRows-_row, _col)         = _view(_row+1,      0, retRows-_row-1, _col);
+	retMat(   0, _col,         _row, retCols-_col) = _view(     0, _col+1,           _row, retCols-_col-1);
+	retMat(_row, _col, retRows-_row, retCols-_col) = _view(_row+1, _col+1, retRows-_row-1, retCols-_col-1);
 
 	return retMat;
 }
@@ -1039,14 +1048,15 @@ auto minorMat(MatrixView<rows, cols, Props, T const> const& _view, int _row, int
 template <int rows, int cols, typename Props, typename T>
 auto adjugateMat(MatrixView<rows, cols, Props, T const> const& _view) -> Matrix<rows, cols, T> {
 
-	Matrix<rows, cols, T> retMat{1};
+	Matrix<rows, cols, T> retMat(_view.num_rows(), _view.num_cols());
 
 	if (cols == 1) {
+		retMat = T(0.);
 		return retMat;
 	}
 
-	for(int i = 0; i < rows; ++i) {
-		for(int j = 0; j < cols; ++j) {
+	for(int i = 0; i < _view.num_rows(); ++i) {
+		for(int j = 0; j < _view.num_cols(); ++j) {
 			T sign = (i%2*2-1) * (j%2*2-1);
 			auto det = minorMat(_view, i, j).det();
 			retMat(i, j) = sign * det;
@@ -1087,7 +1097,7 @@ auto det(MatrixView<rows, cols, Props, T const> const& mat) -> T {
 	T retValue = 1.;
 	auto L = luDecomposition_L(mat);
 
-	for (int i(0); i < rows; ++i) {
+	for (int i(0); i < L.num_rows(); ++i) {
 		retValue *= L(i, i);
 	}
 	return retValue;
@@ -1135,11 +1145,14 @@ auto inv(MatrixView<3, 3, Props, T const> const& mat) -> Matrix<3, 3, T> {
 // inverse of any square matrix
 template <int rows, typename Props, typename T>
 auto inv(MatrixView<rows, rows, Props, T const> const& _view) -> Matrix<rows, rows, T> {
-	Matrix<rows, rows, T> retMat;
+	if (_view.num_rows() != _view.num_cols()) {
+		throw SizeMismatchError(_view, "inv");
+	}
+	Matrix<rows, rows, T> retMat(_view.num_rows(), _view.num_cols());
 
 	auto detInv = T(1.) / _view.det();
 	auto adj    = adjugateMat(_view);
-	auto tran = adj.t_view();
+	auto tran   = adj.t_view();
 	retMat      = tran * detInv;
 	return retMat;
 }
@@ -1157,9 +1170,9 @@ auto MatrixView<trows, tcols, props, T const>::inv() const -> Matrix<trows, tcol
 // matrix elementwise addition
 template<int rows, int cols, typename P1, typename P2, typename T>
 auto operator+(MatrixView<rows, cols, P1, T const > const& lhs, MatrixView<rows, cols, P2, T const> const& rhs) -> Matrix<rows, cols, T> {
-	Matrix<rows, cols, T> ret;
-	for (int row(0); row < rows; ++row) {
-		for (int col(0); col < cols; ++col) {
+	Matrix<rows, cols, T> ret(lhs.num_rows(), lhs.num_cols());
+	for (int row(0); row < lhs.num_rows(); ++row) {
+		for (int col(0); col < lhs.num_cols(); ++col) {
 			ret(row, col) = lhs(row, col) + rhs(row, col);
 		}
 	}
@@ -1167,9 +1180,9 @@ auto operator+(MatrixView<rows, cols, P1, T const > const& lhs, MatrixView<rows,
 }
 template<int rows, int cols, typename Props, typename T>
 auto operator+(MatrixView<rows, cols, Props, T const> const& lhs, T const& rhs) -> Matrix<rows, cols, T> {
-	Matrix<rows, cols, T> ret;
-	for (int row(0); row < rows; ++row) {
-		for (int col(0); col < cols; ++col) {
+	Matrix<rows, cols, T> ret;(lhs.num_rows(), lhs.num_cols());
+	for (int row(0); row < lhs.num_rows(); ++row) {
+		for (int col(0); col < lhs.num_cols(); ++col) {
 			ret(row, col) = lhs(row, col) + rhs;
 		}
 	}
@@ -1182,9 +1195,9 @@ auto operator+(T const& lhs, MatrixView<rows, cols, Props, T const> const& rhs) 
 
 template<int rows, int cols, typename P1, typename P2, typename T>
 auto operator-(MatrixView<rows, cols, P1, T const> const& lhs, MatrixView<rows, cols, P2, T const> const& rhs) -> Matrix<rows, cols, T> {
-	Matrix<rows, cols, T> ret;
-	for (int row(0); row < rows; ++row) {
-		for (int col(0); col < cols; ++col) {
+	Matrix<rows, cols, T> ret(lhs.num_rows(), lhs.num_cols());
+	for (int row(0); row < lhs.num_rows(); ++row) {
+		for (int col(0); col < lhs.num_cols(); ++col) {
 			ret(row, col) = lhs(row, col) - rhs(row, col);
 		}
 	}
@@ -1192,9 +1205,9 @@ auto operator-(MatrixView<rows, cols, P1, T const> const& lhs, MatrixView<rows, 
 }
 template<int rows, int cols, typename Props, typename T>
 auto operator-(MatrixView<rows, cols, Props, T const> const& lhs, T const& rhs) -> Matrix<rows, cols, T> {
-	Matrix<rows, cols, T> ret;
-	for (int row(0); row < rows; ++row) {
-		for (int col(0); col < cols; ++col) {
+	Matrix<rows, cols, T> ret(lhs.num_rows(), lhs.num_cols());
+	for (int row(0); row < lhs.num_rows(); ++row) {
+		for (int col(0); col < lhs.num_cols(); ++col) {
 			ret(row, col) = lhs(row, col) - rhs;
 		}
 	}
@@ -1202,9 +1215,9 @@ auto operator-(MatrixView<rows, cols, Props, T const> const& lhs, T const& rhs) 
 }
 template<int rows, int cols, typename Props, typename T>
 auto operator-(T const& lhs, MatrixView<rows, cols, Props, T const> const& rhs) -> Matrix<rows, cols, T> {
-	Matrix<rows, cols, T> ret;
-	for (int row(0); row < rows; ++row) {
-		for (int col(0); col < cols; ++col) {
+	Matrix<rows, cols, T> ret(rhs.num_rows(), rhs.num_cols());
+	for (int row(0); row < rhs.num_rows(); ++row) {
+		for (int col(0); col < rhs.num_cols(); ++col) {
 			ret(row, col) = lhs - rhs(row, col);
 		}
 	}
@@ -1303,7 +1316,6 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 	T anorm{0.};
 	/* Householder reduction to bidiagonal form */
 	for (int i = 0; i < cols and i < rows; ++i) {
-		int l = i+1;
 		{
 			auto row_view = U.view(i, i, rows-i, 1);
 			auto scale = sum(abs(row_view));
@@ -1315,7 +1327,7 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 				auto g = -signCopy(sqrt(s), f);
 				auto h = f * g - s;
 				U(i, i) = f - g;
-				for (int j = l; j < cols; j++) {
+				for (int j = i+1; j < cols; j++) {
 					auto row_view2 = U.view(i, j, rows-i, 1);
 					auto s = T(row_view.t_view() * row_view2);
 					row_view2 += row_view * (s/h);
@@ -1324,16 +1336,17 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 				S(i) = scale *g;
 			}
 		}
-		if (i+1 < cols) {
+		int l = i+1;
+		if (l < cols) {
 			auto col_view = U.view(i, l, 1, cols-l);
 			auto scale = sum(abs(col_view));
 			if (scale) {
 				col_view *= T(1.) / scale;
 				auto s = col_view.normSqr();
-				auto f = U(i, l);
-				auto g = -signCopy(sqrt(s),f);
-				auto h = f * g - s;
-				U(i, l) = f - g;
+				auto g = -signCopy(sqrt(s), U(i, l));
+				auto h = U(i, l) * g - s;
+				U(i, l) -= g;
+
 				auto rv_view = rv1.view(l, 0, cols-l, 1);
 				rv_view = col_view.t_view() * (T(1.) / h);
 
@@ -1351,7 +1364,6 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 		anorm = max(anorm,(abs(S(i))+abs(rv1(i))));
 	}
 
-	T g{0.}, scale{0.};
 	for (int i = cols-2; i >= 0; i--) { /* Accumulation of right-hand transformations. */
 		int l = i+1;
 		if (rv1(i+1)) {
@@ -1376,22 +1388,23 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 				T f = (s/U(i, i))*w_inv;
 				for (int k = i; k < rows; k++) U(k, j) += f*U(k, i);
 			}
-			for (int j = i; j < rows; j++) U(j, i) *= w_inv;
-		} else for (int j = i; j < rows; j++) U(j, i)=0.0;
+			U(i, i, rows-i, 1) *= w_inv;
+		} else {
+			U(i, i, rows-i, 1) = 0.;
+		}
 		++U(i, i);
 	}
-
 	for (int k = cols-1; k >= 0; k--) { /* Diagonalization of the bidiagonal form. */
 		for (int its = 1; its <=30; its++) {
 			int flag = 1;
 			int l;
 			for (l = k; l >= 0; l--) { /* Test for splitting. */
 				/* Note that rv1[0] is always zero. */
-				if ((T)(abs(rv1(l))+anorm) == anorm) {
+				if ((abs(rv1(l))+anorm) == anorm) {
 					flag=0;
 					break;
 				}
-				if ((T)(abs(S(l-1))+anorm) == anorm) break;
+				if ((abs(S(l-1))+anorm) == anorm) break;
 			}
 			if (flag) {
 				T c = 0.0; /* Cancellation of rv1[l-1], if l > 1. */
@@ -1399,12 +1412,11 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 				for (int i = l; i < k; i++) {
 					T f = s*rv1(i);
 					rv1(i) = c*rv1(i);
-					using namespace std;
 					if (abs(f)+anorm == anorm) break;
-					T h = pythag(f,S(i));
-					S(i) = h;
-					h = 1./h;
-					c = S(i)*h;
+					auto t1 = S(i);
+					S(i) = pythag(f, t1);
+					auto h = 1./S(i);
+					c = t1*h;
 					s = -f*h;
 					for (int j = 0; j < rows; j++) {
 						U(j, l-1) = U(j, l-1) * c + U(j, i) * s;
@@ -1425,7 +1437,7 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 			T x = S(l); /* Shift from bottom 2-by-2 minor. */
 			T y = S(k-1);
 			T z = S(k);
-			g = rv1(k-1);
+			T g = rv1(k-1);
 			T h = rv1(k);
 			T f = ((y-z)*(y+z)+(g-h)*(g+h))/(2.0*h*y);
 			g = pythag(f,1.0);

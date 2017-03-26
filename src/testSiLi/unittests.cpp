@@ -1,4 +1,6 @@
+//#include "../SiLi/SiLi.h"
 #include <SiLi/SiLi.h>
+
 #include <gtest/gtest.h>
 
 #if __GNUC__ > 4
@@ -273,6 +275,14 @@ TEST(SiLi, matrixView_det44) {
 	EXPECT_NEAR(m.det(), 2248., 1e-9);
 }
 
+TEST(SiLi, matrixView_det44_dyn) {
+	SiLi::Matrix<-1, -1, double> m;
+	m = SiLi::make_mat<4, 4, double>({{1., 2., 3., 10.}, {2., 3., 4., 20.}, {4., -1., 10., 50.}, {10., -11., 12., -13.}});
+
+	EXPECT_NEAR(m.det(), 2248., 1e-9);
+}
+
+
 
 
 TEST(SiLi, matrixView_inv33) {
@@ -309,6 +319,27 @@ TEST(SiLi, matrixView_inv44) {
 		EXPECT_NEAR(v[i], list[i], 1e-9);
 	}
 }
+
+TEST(SiLi, matrixView_inv44_dyn) {
+	SiLi::Matrix<-1, -1, double> m;
+	m = SiLi::make_mat<4, 4, double>({{1., 2., 3., 4.},
+	                         {6., 6., 7., 8.},
+	                         {9., 10., 10., 12.},
+	                         {13., 14., 15., 15.}});
+
+
+	std::vector<double> v {-13./19, 17./19, -2./19, -4./19, 7./38, -53./38, 23./38, 4/19.,
+	                       7./19, 4./19, -15./19, 8./19, 1./19, 6./19, 6./19, -7./19};
+	std::vector<double> list;
+	for (auto x : inv(m)) {
+		list.push_back(x);
+	}
+	ASSERT_EQ(v.size(), list.size());
+	for (size_t i(0); i < v.size(); ++i) {
+		EXPECT_NEAR(v[i], list[i], 1e-9);
+	}
+}
+
 
 TEST(SiLi, matrixView_svd2x2) {
 	auto m = SiLi::make_mat<2, 2, double>({{1., 2.}, {2., 3.}});
@@ -437,7 +468,7 @@ TEST(SiLi, svd_random) {
 }
 
 TEST(SiLi, svd_random_online_sqr) {
-	for (int i(0); i<1; ++i) {
+	for (int i(0); i<1000; ++i) {
 		try {
 		auto v = []() { return (double(rand())/RAND_MAX) * 20. - 10.; };
 		auto m = SiLi::make_mat<4, 4, double>({
@@ -466,23 +497,14 @@ TEST(SiLi, svd_random_online_sqr) {
 }
 
 TEST(SiLi, svd_random_online) {
-	for (int i(0); i<1; ++i) {
+	for (int i(0); i<100; ++i) {
 		auto v = []() { return std::round(((double(rand())/RAND_MAX) * 20. - 10.)*100.)/100.; };
-/*		auto m = SiLi::make_mat<4, 5, double>({
+		auto m = SiLi::make_mat<4, 5, double>({
 				 {v(), v(), v(), v(), v()},
 				 {v(), v(), v(), v(), v()},
 				 {v(), v(), v(), v(), v()},
 				 {v(), v(), v(), v(), v()}
-		});*/
-/*		auto m = SiLi::make_mat<2, 3, double>({
-				 {v(), v(), v()},
-				 {v(), v(), v()}
-		});*/
-
-		auto m = SiLi::make_mat<2, 2, double>({
-				 {v(), v()},
-				 {v(), v()}
-		});
+		}).t();
 
 		auto svd = m.svd();
 		auto S = make_diag(svd.S);
@@ -491,8 +513,8 @@ TEST(SiLi, svd_random_online) {
 		auto diff = m - re;;
 		EXPECT_NEAR(0., diff.norm(), 1e-9);
 /*		auto Udet = svd.U.view<4, 4>(0, 0).det();
-		EXPECT_NEAR(1., std::abs(Udet), 1e-9);
-		EXPECT_NEAR(1., std::abs(svd.V.det()), 1e-9);*/
+		EXPECT_NEAR(1., std::abs(Udet), 1e-9);*/
+		EXPECT_NEAR(1., std::abs(svd.V.det()), 1e-9);
 	}
 }
 
