@@ -28,7 +28,7 @@ struct Properties {
 	using Static     = Properties<false,    _rowStride, _transposed, _offset>;
 };
 
-template<int trows, int tcols, int tstride, bool staticMatrix = (trows >= 0 and tcols >= 0)>
+template<int trows, int tcols, int tstride, int toffset, bool staticMatrix = (trows >= 0 and tcols >= 0)>
 class MatrixViewBase;
 
 template<int trows, int tcols, typename... Args>
@@ -97,33 +97,33 @@ public:
 };
 
 struct SizeMismatchError : public std::runtime_error {
-	template<int trows1, int tcols1, int tstride1, bool staticMatrix1,
-	         int trows2, int tcols2, int tstride2, bool staticMatrix2>
-	SizeMismatchError(MatrixViewBase<trows1, tcols1, tstride1, staticMatrix1> const& lhs,
-	                  MatrixViewBase<trows2, tcols2, tstride2, staticMatrix2> const& rhs,
+	template<int trows1, int tcols1, int tstride1, int toffset1, bool staticMatrix1,
+	         int trows2, int tcols2, int tstride2, int toffset2, bool staticMatrix2>
+	SizeMismatchError(MatrixViewBase<trows1, tcols1, tstride1, toffset1, staticMatrix1> const& lhs,
+	                  MatrixViewBase<trows2, tcols2, tstride2, toffset2, staticMatrix2> const& rhs,
 	                  std::string _op)
 	: std::runtime_error("size mismatch on operator " + _op + ": "
 	                         "M<" + std::to_string(lhs.num_rows()) + "x" + std::to_string(lhs.num_cols()) + ">,"
 	                         "M<" + std::to_string(rhs.num_rows()) + "x" + std::to_string(rhs.num_cols()) + ">")
 	{}
 
-	template<int trows1, int tcols1, int tstride1, bool staticMatrix1>
-	SizeMismatchError(MatrixViewBase<trows1, tcols1, tstride1, staticMatrix1> const& lhs,
+	template<int trows1, int tcols1, int tstride1, int toffset1, bool staticMatrix1>
+	SizeMismatchError(MatrixViewBase<trows1, tcols1, tstride1, toffset1, staticMatrix1> const& lhs,
 	                  std::string _op)
 	: std::runtime_error("size mismatch on operator " + _op + ": "
 	                         "M<" + std::to_string(lhs.num_rows()) + "x" + std::to_string(lhs.num_cols()) + ">")
 	{}
 
 };
-template<int trows1, int tcols1, int tstride1, bool staticMatrix1,
-         int trows2, int tcols2, int tstride2, bool staticMatrix2>
-auto sizeMismatchError(MatrixViewBase<trows1, tcols1, tstride1, staticMatrix1> const& lhs,
-                       MatrixViewBase<trows2, tcols2, tstride2, staticMatrix2> const& rhs,
+template<int trows1, int tcols1, int tstride1, int toffset1, bool staticMatrix1,
+         int trows2, int tcols2, int tstride2, int toffset2, bool staticMatrix2>
+auto sizeMismatchError(MatrixViewBase<trows1, tcols1, tstride1, toffset1, staticMatrix1> const& lhs,
+                       MatrixViewBase<trows2, tcols2, tstride2, toffset2, staticMatrix2> const& rhs,
                        std::string _op) -> SizeMismatchError {
 	return SizeMismatchError(lhs, rhs, _op);
 }
-template<int trows1, int tcols1, int tstride1, bool staticMatrix1>
-auto sizeMismatchError(MatrixViewBase<trows1, tcols1, tstride1, staticMatrix1> const& lhs,
+template<int trows1, int tcols1, int tstride1, int toffset1, bool staticMatrix1>
+auto sizeMismatchError(MatrixViewBase<trows1, tcols1, tstride1, toffset1, staticMatrix1> const& lhs,
                        std::string _op) -> SizeMismatchError {
 	return SizeMismatchError(lhs, _op);
 }
@@ -219,26 +219,29 @@ auto createColViews(MatrixView<rows, cols, prop, T>& view, detail::index<nbrs...
 }
 }
 
-template<int trows, int tcols, int tstride>
-class MatrixViewBase<trows, tcols, tstride, true> {
+template<int trows, int tcols, int tstride, int toffset>
+class MatrixViewBase<trows, tcols, tstride, toffset, true> {
 public:
 	constexpr int num_rows() const { return trows; }
 	constexpr int num_cols() const { return tcols; }
 	constexpr int stride() const { return tstride; }
+	constexpr int offset() const { return toffset; }
 };
 
-template<int trows, int tcols, int tstride>
-class MatrixViewBase<trows, tcols, tstride, false> {
+template<int trows, int tcols, int tstride, int toffset>
+class MatrixViewBase<trows, tcols, tstride, toffset, false> {
 protected:
 	int mRows;
 	int mCols;
 	int mStride;
+	int mOffset;
 	template<int, int, typename...> friend class MatrixView;
 	template<int, int, typename, typename...> friend class Matrix;
 public:
 	int num_rows() const { return mRows; }
 	int num_cols() const { return mCols; }
 	int stride() const { return mStride; }
+	int offset() const { return mOffset; }
 };
 
 constexpr auto add_size(int v1, int v2) -> int {
@@ -249,14 +252,14 @@ constexpr auto add_size(int v1, int v2) -> int {
 /** Const MatrixView with all methods that are allowed to be operated on a const matrix view
  */
 template<int trows, int tcols, typename prop, typename T>
-class MatrixView<trows, tcols, prop, T const> : public MatrixViewBase<trows, tcols, prop::rowStride> {
+class MatrixView<trows, tcols, prop, T const> : public MatrixViewBase<trows, tcols, prop::rowStride, prop::offset> {
 public:
 	using Type = T;
 	using Props = prop;
 
 private:
 	using TMatrix = Matrix<trows, tcols, T>;
-	using Base    = MatrixViewBase<trows, tcols, prop::rowStride>;
+	using Base    = MatrixViewBase<trows, tcols, prop::rowStride, prop::offset>;
 
 protected:
 	T const* cBasePtr;
@@ -271,12 +274,13 @@ public:
 	template<typename T2>
 	MatrixView(MatrixView<trows, tcols, prop, T2> const& rhs) : cBasePtr(rhs.cBasePtr) {}
 
+	using Base::offset;
 	using Base::stride;
 
 	// read only element access not transposed
 	template<bool t = prop::transposed, typename std::enable_if<not t>::type* = nullptr>
 	auto operator()(int row, int col) const -> T const& {
-		return *(cBasePtr + (row * stride()) + col + prop::offset*row);
+		return *(cBasePtr + (row * stride()) + col + offset()*row);
 	}
 
 	// read only element access transposed
@@ -336,6 +340,7 @@ public:
 		view.mRows = rows;
 		view.mCols = cols;
 		view.mStride = this->stride();
+		view.mOffset = this->offset();
 		return view;
 	}
 
@@ -359,6 +364,7 @@ public:
 		view.mRows   = 1;
 		view.mCols   = this->mCols;
 		view.mStride = this->mStride;
+		view.mOffset = this->offset();
 		return view;
 	}
 
@@ -368,6 +374,7 @@ public:
 		view.mRows   = this->mRows;
 		view.mCols   = 1;
 		view.mStride = this->mStride;
+		view.mOffset = this->offset();
 		return view;
 	}
 
@@ -459,6 +466,9 @@ public:
 	// compute inverse
 	auto inv() const -> Matrix<trows, tcols, T>;
 
+	// compute pseudo inverse
+	auto pinv(T epsilon = 0.) const -> Matrix<tcols, trows, T>;
+
 	// determinant
 	auto det() const -> T;
 
@@ -474,6 +484,7 @@ public:
 		view.mRows   = this->mCols;
 		view.mCols   = this->mRows;
 		view.mStride = this->mStride;
+		view.mOffset = this->offset();
 		return view;
 	}
 
@@ -484,9 +495,21 @@ public:
 
 
 	// read only diagonal view
+	template <bool dynamic = prop::dynamic, typename std::enable_if<not dynamic>::type* = nullptr>
 	auto diag() const -> MatrixView<(tcols < trows)?tcols:trows, 1, typename prop::Diag, T const> {
 		return MatrixView<(tcols < trows)?tcols:trows, 1, typename prop::Diag, T const> {cBasePtr};
 	}
+
+	template <bool dynamic = prop::dynamic, typename std::enable_if<dynamic>::type* = nullptr>
+	auto diag() const -> MatrixView<-1, 1, typename prop::Diag, T const> {
+		auto view = MatrixView<-1, 1, typename prop::Diag, T const> {cBasePtr};
+		view.mRows   = std::min(this->num_rows(), this->num_cols());
+		view.mCols   = 1;
+		view.mStride = this->mStride;
+		view.mOffset = 1;
+		return view;
+	}
+
 
 	/* squared frobenius norm */
 	auto normSqr() const -> T {
@@ -536,7 +559,7 @@ template<int trows, int tcols, typename prop, typename T>
 class MatrixView<trows, tcols, prop, T> : public MatrixView<trows, tcols, prop, T const> {
 private:
 	using CView = MatrixView<trows, tcols, prop, T const>;
-	using Base  = MatrixViewBase<trows, tcols, prop::rowStride>;
+	using Base  = MatrixViewBase<trows, tcols, prop::rowStride, prop::offset>;
 
 protected:
 	T* basePtr;
@@ -551,12 +574,13 @@ public:
 
 	// pass through
 	using CView::stride;
+	using CView::offset;
 	using CView::operator();
 
 	// value element access
 	template<bool t = prop::transposed, typename std::enable_if<not t>::type* = nullptr>
 	auto operator()(int row, int col) -> T& {
-		return *(basePtr + (row * stride()) + col + row * prop::offset);
+		return *(basePtr + (row * stride()) + col + row * offset());
 	}
 
 	// value element access
@@ -593,6 +617,7 @@ public:
 		view.mRows = rows;
 		view.mCols = cols;
 		view.mStride = this->stride();
+		view.mOffset = this->offset();
 		return view;
 	}
 
@@ -617,6 +642,7 @@ public:
 		view.mRows   = 1;
 		view.mCols   = this->mCols;
 		view.mStride = this->mStride;
+		view.mOffset = this->offset();
 		return view;
 	}
 
@@ -626,6 +652,7 @@ public:
 		view.mRows   = this->mRows;
 		view.mCols   = 1;
 		view.mStride = this->mStride;
+		view.mOffset = this->offset();
 		return view;
 	}
 
@@ -665,6 +692,10 @@ public:
 
 	template <typename oProp>
 	auto operator+=(MatrixView<trows, tcols, oProp, T const> const& rhs) -> MatrixView& {
+		if (this->num_rows() != rhs.num_cols()) {
+			throw SizeMismatchError(*this, rhs, "operator+=");
+		}
+
 		for (int row(0); row < this->num_rows(); ++row) {
 			for (int col(0); col < this->num_cols(); ++col) {
 				(*this)(row, col) += rhs(row, col);
@@ -761,15 +792,29 @@ public:
 		view.mRows   = this->mCols;
 		view.mCols   = this->mRows;
 		view.mStride = this->mStride;
-		return view;
+		view.mOffset = this->offset();
+;		return view;
 	}
 
 
 	// diagonal view
 	using CView::diag;
+
+	template <bool dynamic = prop::dynamic, typename std::enable_if<not dynamic>::type* = nullptr>
 	auto diag() -> MatrixView<(tcols < trows)?tcols:trows, 1, typename prop::Diag, T> {
 		return MatrixView<(tcols < trows)?tcols:trows, 1, typename prop::Diag, T> {basePtr};
 	}
+
+	template <bool dynamic = prop::dynamic, typename std::enable_if<dynamic>::type* = nullptr>
+	auto diag() -> MatrixView<-1, 1, typename prop::Diag, T> {
+		auto view = MatrixView<-1, 1, typename prop::Diag, T> {basePtr};
+		view.mRows   = std::min(this->num_rows(), this->num_cols());
+		view.mCols   = 1;
+		view.mStride = this->mStride;
+		view.mOffset = 1;
+		return view;
+	}
+
 };
 
 template<int rows, int cols, typename T>
@@ -864,6 +909,7 @@ protected:
 		this->mRows = _rows;
 		this->mCols = _cols;
 		this->mStride = _stride;
+		this->mOffset = 0;
 	}
 	void resize(int _rows, int _cols, int _stride, std::vector<T> values) {
 		vals = std::move(values);
@@ -871,6 +917,7 @@ protected:
 		this->mRows = _rows;
 		this->mCols = _cols;
 		this->mStride = _stride;
+		this->mOffset = 0;
 	}
 
 public:
@@ -949,6 +996,7 @@ template<int tcols, typename T>
 class Matrix<-1, tcols, T> : public Matrix<-1, -1, T> {
 public:
 	using Matrix<-1, -1, T>::Matrix;
+
 };
 
 
@@ -1163,6 +1211,13 @@ auto MatrixView<trows, tcols, props, T const>::inv() const -> Matrix<trows, tcol
 	return SiLi::inv(*this);
 }
 
+// member implementation
+template<int trows, int tcols, typename props, typename T>
+auto MatrixView<trows, tcols, props, T const>::pinv(T epsilon) const -> Matrix<tcols, trows, T> {
+	auto temp = this->t_view() * *this;
+	temp.diag() += epsilon;
+	return temp.inv() * this->t_view();
+}
 
 /**
  * addition/substraction

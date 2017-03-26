@@ -340,6 +340,25 @@ TEST(SiLi, matrixView_inv44_dyn) {
 	}
 }
 
+TEST(SiLi, matrixView_pinv44_dyn) {
+	SiLi::Matrix<-1, -1, double> m;
+	m = SiLi::make_mat<4, 4, double>({{1., 2., 3., 4.},
+	                         {6., 6., 7., 8.},
+	                         {9., 10., 10., 12.},
+	                         {13., 14., 15., 15.}});
+
+
+	std::vector<double> v {-13./19, 17./19, -2./19, -4./19, 7./38, -53./38, 23./38, 4/19.,
+	                       7./19, 4./19, -15./19, 8./19, 1./19, 6./19, 6./19, -7./19};
+	std::vector<double> list;
+	for (auto x : m.pinv()) {
+		list.push_back(x);
+	}
+	ASSERT_EQ(v.size(), list.size());
+	for (size_t i(0); i < v.size(); ++i) {
+		EXPECT_NEAR(v[i], list[i], 1e-9);
+	}
+}
 
 TEST(SiLi, matrixView_svd2x2) {
 	auto m = SiLi::make_mat<2, 2, double>({{1., 2.}, {2., 3.}});
@@ -629,6 +648,47 @@ TEST(SiLi, matrixView_diag) {
 	EXPECT_EQ(11., m.t_view().diag()(0, 0));
 	EXPECT_EQ(22., m.t_view().diag()(1, 0));
 }
+
+TEST(SiLi, matrixView_diag_dyn) {
+	SiLi::Matrix<-1, -1, double> m;
+	m = SiLi::make_mat<3, 2, double>({{11., 12.},
+	                         {21., 22.},
+	                         {31., 32.}});
+
+	EXPECT_EQ(11., m.diag()(0, 0));
+	EXPECT_EQ(22., m.diag()(1, 0));
+
+	EXPECT_EQ(11., m.diag().t_view()(0, 0));
+	EXPECT_EQ(22., m.diag().t_view()(0, 1));
+
+	EXPECT_EQ(11., m.diag().t_view().diag()(0, 0));
+	EXPECT_EQ(1, m.diag().t_view().diag().num_rows());
+	EXPECT_EQ(1, m.diag().t_view().diag().num_cols());
+
+	EXPECT_EQ(11., m.t_view().diag()(0, 0));
+	EXPECT_EQ(22., m.t_view().diag()(1, 0));
+}
+
+TEST(SiLi, matrixView_diag_write_dyn) {
+	SiLi::Matrix<-1, -1, double> m;
+	m = SiLi::make_mat<3, 2, double>({{11., 12.},
+	                         {21., 22.},
+	                         {31., 32.}});
+
+	m.diag()(0) = 1.;
+	m.diag()(1) = 2.;
+
+	EXPECT_EQ(1., m(0, 0));
+	EXPECT_EQ(2., m(1, 1));
+
+	m.diag() += 1.;
+
+	EXPECT_EQ(2., m(0, 0));
+	EXPECT_EQ(3., m(1, 1));
+
+}
+
+
 
 TEST(SiLi, matrixView_diag2) {
 	auto m = SiLi::make_mat<3, 2, double>({{11., 12.},
