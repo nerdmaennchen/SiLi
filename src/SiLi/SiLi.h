@@ -142,9 +142,9 @@ struct Number {
  */
 template <int rows, int cols, typename T>
 struct SVD {
-	Matrix<rows, cols, T> U;
-	Matrix<cols, 1, T>    S;
-	Matrix<cols, cols, T> V;
+	Matrix<rows, cols, T> U{0.};
+	Matrix<cols, 1, T>    S{0.};
+	Matrix<cols, cols, T> V{0.};
 };
 
 
@@ -283,7 +283,7 @@ public:
 	// read only element access transposed
 	template<bool t = prop::transposed, typename std::enable_if<t>::type* = nullptr>
 	auto operator()(int row, int col) const -> T const& {
-		return *(cBasePtr + (col * stride()) + row + prop::offset*col);
+		return operator()<false>(col, row);
 	}
 
 	// read only element access not transposed
@@ -559,7 +559,7 @@ public:
 	// value element access
 	template<bool t = prop::transposed, typename std::enable_if<t>::type* = nullptr>
 	auto operator()(int row, int col) -> T& {
-		return *(basePtr + (col * stride()) + row + col * prop::offset);
+		return operator()<false>(col, row);
 	}
 
 	// access if matrix is one dimensional
@@ -973,6 +973,7 @@ auto make_diag(MatrixView<rows, 1, Prop, T const> const& _view) -> Matrix<rows, 
 	retVal.diag() = _view;
 	return retVal;
 }
+
 template<int rows, int cols, typename T, typename Prop>
 auto make_diag(MatrixView<rows, 1, Prop, T const> const& _view) -> Matrix<rows, cols, T> {
 	static_assert(cols >= rows, "cannot build a smaller diagonal matrix than the input vector size");
@@ -1291,7 +1292,7 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 	using namespace ::SiLi::detail;
 	using namespace std;
 	SVD<rows, cols, T> retValue;
-	std::array<T, cols> rv1;
+	Matrix<cols, 1, T> rv1{0.};
 
 	auto& U = retValue.U;
 	U = _view;
@@ -1299,60 +1300,63 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 	auto& V = retValue.V;
 	V.diag() = 1.;
 
-	T anorm, g, scale;
-	g = scale = anorm = 0.0; /* Householder reduction to bidiagonal form */
-	for (int i = 0; i < cols; ++i) {
+	T anorm{0.};
+	/* Householder reduction to bidiagonal form */
+	for (int i = 0; i < cols and i < rows; ++i) {
 		int l = i+1;
-		rv1[i] = scale*g;
-		g = scale = 0.0;
-		T s = 0.;
-		if (i < rows) {
+		{
 			auto row_view = U.view(i, i, rows-i, 1);
-			scale = sum(abs(row_view));
+			auto scale = sum(abs(row_view));
 			if (scale) {
 				row_view *= T(1.) / scale;
-				s = row_view.normSqr();
+				auto s = row_view.normSqr();
 
-				T f = U(i, i);
-				g = -signCopy(sqrt(s), f);
-				T h = f * g - s;
+				auto f = U(i, i);
+				auto g = -signCopy(sqrt(s), f);
+				auto h = f * g - s;
 				U(i, i) = f - g;
 				for (int j = l; j < cols; j++) {
-					auto col_view = U.view(i, j, rows-i, 1);
-					auto s = T(row_view.t_view() * col_view);
-					col_view += row_view * (s/h);
+					auto row_view2 = U.view(i, j, rows-i, 1);
+					auto s = T(row_view.t_view() * row_view2);
+					row_view2 += row_view * (s/h);
 				}
 				row_view *= scale;
+				S(i) = scale *g;
 			}
 		}
-		S(i) = scale *g;
-		g = s = scale = 0.0;
-		if (i < rows && i+1 < cols) {
+		if (i+1 < cols) {
 			auto col_view = U.view(i, l, 1, cols-l);
-			scale = sum(abs(col_view));
+			auto scale = sum(abs(col_view));
 			if (scale) {
 				col_view *= T(1.) / scale;
-				s = col_view.normSqr();
-				T f = U(i, l);
-				g = -signCopy(sqrt(s),f);
-				T h = f*g-s;
-				U(i, l)=f-g;
-				for (int k = l; k < cols; k++) rv1[k]=U(i, k)/h;
+				auto s = col_view.normSqr();
+				auto f = U(i, l);
+				auto g = -signCopy(sqrt(s),f);
+				auto h = f * g - s;
+				U(i, l) = f - g;
+				auto rv_view = rv1.view(l, 0, cols-l, 1);
+				rv_view = col_view.t_view() * (T(1.) / h);
+
 				for (int j = l; j < rows; j++) {
-					s=0.;
-					for (int k = l; k < cols; k++) s += U(j, k)*U(i, k);
-					for (int k = l; k < cols; k++) U(j, k) += s*rv1[k];
+					auto col_view2 = U.view(j, l, 1, cols-l);
+					auto s = T(col_view2 * col_view.t_view());
+					col_view2 += rv_view.t_view() * s;
 				}
-				for (int k = l; k < cols; k++) U(i, k) *= scale;
+				col_view *= scale;
+				if (i+1 < cols) {
+					rv1(i+1) = scale*g;
+				}
 			}
 		}
-		anorm = max(anorm,(abs(S(i))+abs(rv1[i])));
+		anorm = max(anorm,(abs(S(i))+abs(rv1(i))));
 	}
+
+	T g{0.}, scale{0.};
 	for (int i = cols-2; i >= 0; i--) { /* Accumulation of right-hand transformations. */
 		int l = i+1;
-		if (rv1[i+1]) {
+		if (rv1(i+1)) {
 			for (int j = l; j < cols; j++) /* Double division to avoid possible underflow. */
-				V(j, i) = (U(i, j)/U(i, l)) / rv1[i+1];
+				V(j, i) = (U(i, j)/U(i, l)) / rv1(i+1);
 			for (int j = l; j < cols; j++) {
 				T s=0.;
 				for (int k = l; k <cols; k++) s += U(i, k)*V(k, j);
@@ -1376,13 +1380,14 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 		} else for (int j = i; j < rows; j++) U(j, i)=0.0;
 		++U(i, i);
 	}
+
 	for (int k = cols-1; k >= 0; k--) { /* Diagonalization of the bidiagonal form. */
 		for (int its = 1; its <=30; its++) {
 			int flag = 1;
 			int l;
 			for (l = k; l >= 0; l--) { /* Test for splitting. */
 				/* Note that rv1[0] is always zero. */
-				if ((T)(abs(rv1[l])+anorm) == anorm) {
+				if ((T)(abs(rv1(l))+anorm) == anorm) {
 					flag=0;
 					break;
 				}
@@ -1392,8 +1397,8 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 				T c = 0.0; /* Cancellation of rv1[l-1], if l > 1. */
 				T s = 1.0;
 				for (int i = l; i < k; i++) {
-					T f = s*rv1[i];
-					rv1[i] = c*rv1[i];
+					T f = s*rv1(i);
+					rv1(i) = c*rv1(i);
 					using namespace std;
 					if (abs(f)+anorm == anorm) break;
 					T h = pythag(f,S(i));
@@ -1420,8 +1425,8 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 			T x = S(l); /* Shift from bottom 2-by-2 minor. */
 			T y = S(k-1);
 			T z = S(k);
-			g = rv1[k-1];
-			T h = rv1[k];
+			g = rv1(k-1);
+			T h = rv1(k);
 			T f = ((y-z)*(y+z)+(g-h)*(g+h))/(2.0*h*y);
 			g = pythag(f,1.0);
 			f = ((x-z)*(x+z)+h*((y/(f+signCopy(g,f)))-h))/x;
@@ -1429,12 +1434,12 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 			T s = 1.; /* Next QR transformation: */
 			for (int j = l; j < k; j++) {
 				int i = j+1;
-				g = rv1[i];
+				g = rv1(i);
 				y = S(i);
 				h = s*g;
 				g = c*g;
 				z = pythag(f,h);
-				rv1[j] = z;
+				rv1(j) = z;
 				c = f/z;
 				s = h/z;
 				f = x*c+g*s;
@@ -1463,8 +1468,8 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 					U(jj, i) = z*c-y*s;
 				}
 			}
-			rv1[l] = 0.;
-			rv1[k] = f;
+			rv1(l) = 0.;
+			rv1(k) = f;
 			S(k) = x;
 		}
 	}
@@ -1528,12 +1533,21 @@ auto isfinite(MatrixView<trows, tcols, props, T const> const& _view) -> bool {
  */
 template<int rows, int cols, typename Prop, typename T>
 std::ostream& operator<< (std::ostream& stream, SiLi::MatrixView<rows, cols, Prop, T const> const& view) {
+	stream << "{\n";
 	for (int i(0); i < view.num_rows(); ++i) {
+		stream << "{ ";
 		for (int j(0); j < view.num_cols(); ++j) {
-			stream << view(i, j) << "\t";
+			stream << view(i, j);
+			if (j+1 < view.num_cols()) {
+				stream << ", ";
+			}
 		}
-		stream << "\n";
+		stream << " }";
+		if (i+1 < view.num_rows()) {
+			stream << ",\n";
+		}
 	}
+	stream << "}";
 	return stream;
 }
 

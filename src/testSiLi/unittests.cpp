@@ -436,6 +436,68 @@ TEST(SiLi, svd_random) {
 	}
 }
 
+TEST(SiLi, svd_random_online_sqr) {
+	for (int i(0); i<1; ++i) {
+		try {
+		auto v = []() { return (double(rand())/RAND_MAX) * 20. - 10.; };
+		auto m = SiLi::make_mat<4, 4, double>({
+				 {v(), v(), v(), v()},
+				 {v(), v(), v(), v()},
+				 {v(), v(), v(), v()},
+				 {v(), v(), v(), v()}
+		});
+
+		auto svd = m.svd();
+		auto S = make_diag(svd.S);
+
+		auto re = svd.U * S * svd.V.t_view();
+		auto diff = m - re;;
+		EXPECT_NEAR(0., diff.norm(), 1e-9);
+		auto Udet = svd.U.view<4, 4>(0, 0).det();
+		EXPECT_NEAR(1., std::abs(Udet), 1e-9);
+		EXPECT_NEAR(1., std::abs(svd.V.det()), 1e-9);
+		} catch (std::runtime_error const&e ){
+			std::cerr << e.what() << std::endl;
+			throw;
+		} catch(SiLi::MaxIteration e) {
+			std::cout << "max iterations reached" << std::endl;
+		}
+	}
+}
+
+TEST(SiLi, svd_random_online) {
+	for (int i(0); i<1; ++i) {
+		auto v = []() { return std::round(((double(rand())/RAND_MAX) * 20. - 10.)*100.)/100.; };
+/*		auto m = SiLi::make_mat<4, 5, double>({
+				 {v(), v(), v(), v(), v()},
+				 {v(), v(), v(), v(), v()},
+				 {v(), v(), v(), v(), v()},
+				 {v(), v(), v(), v(), v()}
+		});*/
+/*		auto m = SiLi::make_mat<2, 3, double>({
+				 {v(), v(), v()},
+				 {v(), v(), v()}
+		});*/
+
+		auto m = SiLi::make_mat<2, 2, double>({
+				 {v(), v()},
+				 {v(), v()}
+		});
+
+		auto svd = m.svd();
+		auto S = make_diag(svd.S);
+
+		auto re = svd.U * S * svd.V.t_view();
+		auto diff = m - re;;
+		EXPECT_NEAR(0., diff.norm(), 1e-9);
+/*		auto Udet = svd.U.view<4, 4>(0, 0).det();
+		EXPECT_NEAR(1., std::abs(Udet), 1e-9);
+		EXPECT_NEAR(1., std::abs(svd.V.det()), 1e-9);*/
+	}
+}
+
+
+
 
 TEST(SiLi, matrixView_transposed) {
 	auto m = SiLi::make_mat<2, 2, double>({{11., 12.},

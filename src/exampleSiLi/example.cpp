@@ -1,24 +1,21 @@
 
 #include <SiLi/SiLi.h>
-#include <SiLi/SiLi-simple.h>
 #include <iostream>
 
 using namespace SiLi;
 int main() {
 	{
-		auto v = Matrix<3, 1, double>({{2., 0., 0.}});
-		std::cout << "norm: " << v.norm() << std::endl;
-		std::cout << "elementwise: " << v.applyElementWise([](double const& v) { return v/2.; }).t() << std::endl;
-		std::cout << "norm: " << (v * 0.5).t() << std::endl;
-		std::cout << "norm: " << (v * (1. / v.norm())).t() << std::endl;
-//		std::cout << "norm: " << v.normalized() << std::endl;
+		auto m = Matrix<-1, -1, double>();
+		m = Matrix<1, 3, double>({{1. , 3., 5.}});
+//		std::cout << m.num_rows() << " " << m.num_cols() << std::endl;
+//		std::cout << m << std::endl;
+
+//		m.view(0, 0, 3, 2) *= 2.;
+//		std::cout << m << std::endl;
+//		std::cout << m.t_view() << std::endl;
+//		std::cout << "row: " << m.view_row(0) << std::endl;
+
 		return 0;
-	}
-	{
-		auto m = Matrix<-1, 2, double>();
-		m = Matrix<3, 2, double>({{1., 0.}, {0., 1.}, {3., 4.}});
-		std::cout << m.num_rows() << " " << m.num_cols() << std::endl;
-		std::cout << m << std::endl;
 	}
 
 	{
@@ -58,7 +55,7 @@ int main() {
 
 	{
 		auto m = Matrix<1, -1, double>();
-		m = Matrix<1, 4, double>({{1., 0., 0., 1.}});
+		m = Matrix<1, 4, double>({{1., 2., 3., 4.}});
 
 		for (int x(0); x<5; ++x) {
 			std::cout << "m(" << x << ")" << std::endl;
