@@ -216,7 +216,6 @@ TEST(SiLi, matrixView_iterator2) {
 	EXPECT_EQ(34, v[8]);
 }
 
-#if __GNUC__ > 4
 TEST(SiLi, matrixView_make_matrix) {
 	auto m = SiLi::make_mat({{11, 12, 13},
 	                         {21, 22, 23}});
@@ -231,7 +230,18 @@ TEST(SiLi, matrixView_make_matrix) {
 	EXPECT_EQ(13,  m(0, 2));
 	EXPECT_EQ(23,  m(1, 2));
 }
-#endif
+
+TEST(SiLi, matrixView_make_vec) {
+	auto m = SiLi::make_vec({11, 21, 31});
+
+	EXPECT_EQ(3, m.num_rows());
+	EXPECT_EQ(1, m.num_cols());
+
+	EXPECT_EQ(11,  m(0, 0));
+	EXPECT_EQ(21,  m(1, 0));
+	EXPECT_EQ(31,  m(2, 0));
+}
+
 
 TEST(SiLi, matrixView_det11) {
 	auto m = SiLi::Matrix<1, 1, double>({{11.}});
@@ -306,7 +316,7 @@ TEST(SiLi, matrixView_svd2x2) {
 	auto svd = m.svd();
 	auto S = make_diag(svd.S);
 
-	auto re = svd.U * S * svd.V.t();
+	auto re = svd.U * S * svd.V.t_view();
 	EXPECT_NEAR(std::abs(svd.U.det()), 1., 1e-9);
 	EXPECT_NEAR(std::abs(svd.V.det()), 1., 1e-9);
 	EXPECT_NEAR(m(0, 0), re(0, 0), 1e-9);
@@ -321,7 +331,7 @@ TEST(SiLi, matrixView_svd3x3) {
 	auto svd = m.svd();
 	auto S = make_diag(svd.S);
 
-	auto re = svd.U * S * svd.V.t();
+	auto re = svd.U * S * svd.V.t_view();
 	EXPECT_NEAR(std::abs(svd.U.det()), 1., 1e-9);
 	EXPECT_NEAR(std::abs(svd.V.det()), 1., 1e-9);
 	EXPECT_NEAR(m(0, 0), re(0, 0), 1e-9);
@@ -341,7 +351,7 @@ TEST(SiLi, matrixView_svd4x4) {
 	auto svd = m.svd();
 	auto S = make_diag(svd.S);
 
-	auto re = svd.U * S * svd.V.t();
+	auto re = svd.U * S * svd.V.t_view();
 	EXPECT_NEAR(std::abs(svd.U.det()), 1., 1e-9);
 	EXPECT_NEAR(std::abs(svd.V.det()), 1., 1e-9);
 	for (int row(0); row<m.num_rows(); ++row) {
@@ -357,7 +367,7 @@ TEST(SiLi, matrixView_svd5x5) {
 	auto svd = m.svd();
 	auto S = make_diag(svd.S);
 
-	auto re = svd.U * S * svd.V.t();
+	auto re = svd.U * S * svd.V.t_view();
 	EXPECT_NEAR(std::abs(svd.U.det()), 1., 1e-9);
 	EXPECT_NEAR(std::abs(svd.V.det()), 1., 1e-9);
 	for (int row(0); row<m.num_rows(); ++row) {
@@ -401,7 +411,7 @@ TEST(SiLi, svd_random) {
 	auto svd = m.svd();
 	auto S = make_diag(svd.S);
 
-	auto re = svd.U * S * svd.V.t();
+	auto re = svd.U * S * svd.V.t_view();
 	auto diff = m - re;;
 	EXPECT_NEAR(0., diff.norm(), 1e-9);
 	auto Udet = svd.U.view<4, 4>(0, 0).det();
@@ -430,7 +440,7 @@ TEST(SiLi, svd_random) {
 TEST(SiLi, matrixView_transposed) {
 	auto m = SiLi::make_mat<2, 2, double>({{11., 12.},
 	                         {21., 22.}});
-	auto view = m.t();
+	auto view = m.t_view();
 	EXPECT_NEAR(view.det(), -10., 1e-9);
 	EXPECT_EQ(view(0, 0), 11.);
 	EXPECT_EQ(view(1, 0), 12.);
@@ -442,7 +452,7 @@ TEST(SiLi, matrixView_transposed2) {
 	auto m = SiLi::make_mat<3, 2, double>({{11., 12.},
 	                         {21., 22.},
 	                         {31., 32.}});
-	auto view = m.t();
+	auto view = m.t_view();
 	EXPECT_EQ(view.num_rows(), 2);
 	EXPECT_EQ(view.num_cols(), 3);
 	EXPECT_EQ(view(0, 0), 11.);
@@ -456,7 +466,7 @@ TEST(SiLi, matrixView_transposed2) {
 TEST(SiLi, matrixView_transposed_transposed) {
 	auto m = SiLi::make_mat<2, 2, double>({{11., 12.},
 	                         {21., 22.}});
-	auto view = m.t().t();
+	auto view = m.t_view().t_view();
 	EXPECT_NEAR(view.det(), -10., 1e-9);
 	EXPECT_EQ(view(0, 0), 11.);
 	EXPECT_EQ(view(1, 0), 21.);
@@ -525,15 +535,15 @@ TEST(SiLi, matrixView_diag) {
 	EXPECT_EQ(11., m.diag()(0, 0));
 	EXPECT_EQ(22., m.diag()(1, 0));
 
-	EXPECT_EQ(11., m.diag().t()(0, 0));
-	EXPECT_EQ(22., m.diag().t()(0, 1));
+	EXPECT_EQ(11., m.diag().t_view()(0, 0));
+	EXPECT_EQ(22., m.diag().t_view()(0, 1));
 
-	EXPECT_EQ(11., m.diag().t().diag()(0, 0));
-	EXPECT_EQ(1, m.diag().t().diag().num_rows());
-	EXPECT_EQ(1, m.diag().t().diag().num_cols());
+	EXPECT_EQ(11., m.diag().t_view().diag()(0, 0));
+	EXPECT_EQ(1, m.diag().t_view().diag().num_rows());
+	EXPECT_EQ(1, m.diag().t_view().diag().num_cols());
 
-	EXPECT_EQ(11., m.t().diag()(0, 0));
-	EXPECT_EQ(22., m.t().diag()(1, 0));
+	EXPECT_EQ(11., m.t_view().diag()(0, 0));
+	EXPECT_EQ(22., m.t_view().diag()(1, 0));
 }
 
 TEST(SiLi, matrixView_diag2) {
@@ -543,8 +553,8 @@ TEST(SiLi, matrixView_diag2) {
 
 	EXPECT_EQ(11., m.diag()(0));
 	EXPECT_EQ(22., m.diag()(1));
-	EXPECT_EQ(11., m.diag().t()(0));
-	EXPECT_EQ(22., m.diag().t()(1));
+	EXPECT_EQ(11., m.diag().t_view()(0));
+	EXPECT_EQ(22., m.diag().t_view()(1));
 }
 
 TEST(SiLi, matrixView_make_diag) {
@@ -690,7 +700,7 @@ TEST(SiLi, matrixView_single_element_to_double) {
 	                         {2.},
 	                         {3.}});
 
-	double s = m.t() * m;
+	double s = m.t_view() * m;
 	EXPECT_EQ(14., s);
 }
 

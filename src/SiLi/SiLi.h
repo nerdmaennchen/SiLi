@@ -318,9 +318,14 @@ public:
 	auto det() const -> T;
 
 	// read only transposed
-	auto t() const -> MatrixView<tcols, trows, typename prop::Transposed, T const> {
+	auto t_view() const -> MatrixView<tcols, trows, typename prop::Transposed, T const> {
 		return MatrixView<tcols, trows, typename prop::Transposed, T const> {cBasePtr};
 	}
+	
+	auto t() const -> Matrix<tcols, trows, T> {
+		return t_view();
+	}
+
 
 	// read only diagonal view
 	auto diag() const -> MatrixView<(tcols < trows)?tcols:trows, 1, typename prop::Diag, T const> {
@@ -546,8 +551,8 @@ public:
 	}
 
 	// transposed view
-	using CView::t;
-	auto t() -> MatrixView<tcols, trows, typename prop::Transposed, T> {
+	using CView::t_view;
+	auto t_view() -> MatrixView<tcols, trows, typename prop::Transposed, T> {
 		return MatrixView<tcols, trows, typename prop::Transposed, T> {basePtr};
 	}
 
@@ -839,7 +844,7 @@ auto inv(MatrixView<rows, rows, Props, T const> const& _view) -> Matrix<rows, ro
 
 	auto detInv = T(1.) / _view.det();
 	auto adj    = adjugateMat(_view);
-	auto tran = adj.t();
+	auto tran = adj.t_view();
 	retMat      = tran * detInv;
 	return retMat;
 }
