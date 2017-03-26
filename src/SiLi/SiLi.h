@@ -642,6 +642,12 @@ auto make_mat(T const (&values)[rows][cols]) -> Matrix<rows, cols, T> {
 	return {values};
 }
 
+// create column vector
+template<int rows, typename T = DefaultType>
+auto make_vec(T const (&values)[rows]) -> Matrix<rows, 1, T> {
+	return {values};
+}
+
 // create identity matrix
 template<int rows, int cols, typename T = DefaultType>
 auto make_eye() -> Matrix<rows, cols, T> {
