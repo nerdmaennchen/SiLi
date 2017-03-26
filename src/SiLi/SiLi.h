@@ -3,8 +3,10 @@
 #include <algorithm>
 #include <array>
 #include <complex>
+#include <functional>
 #include <iterator>
 #include <type_traits>
+#include <vector>
 
 namespace SiLi {
 
@@ -13,21 +15,27 @@ using DefaultType = float;
 // This exception is thrown by svd() if the max iteration count is reached
 struct MaxIteration {};
 
-template<int _rowStride, bool _transposed = false, int _offset=0>
+template<bool _dynamic, int _rowStride, bool _transposed = false, int _offset=0>
 struct Properties {
+	static constexpr bool dynamic    {_dynamic};
 	static constexpr int  rowStride  {_rowStride};
 	static constexpr bool transposed {_transposed};
 	static constexpr int  offset     {_offset};
 
-	using Transposed = Properties<_rowStride, not _transposed, _offset>;
-	using Diag       = Properties<_rowStride, false, 1>;
+	using Transposed = Properties<_dynamic, _rowStride, not _transposed, _offset>;
+	using Diag       = Properties<_dynamic, _rowStride, false, 1>;
+	using Dynamic    = Properties<true,     _rowStride, _transposed, _offset>;
+	using Static     = Properties<false,    _rowStride, _transposed, _offset>;
 };
 
-template<int, int, typename T = DefaultType, typename... Args>
-class Matrix;
+template<int trows, int tcols, int tstride, bool staticMatrix = (trows >= 0 and tcols >= 0)>
+class MatrixViewBase;
 
 template<int trows, int tcols, typename... Args>
 class MatrixView;
+
+template<int, int, typename T = DefaultType, typename... Args>
+class Matrix;
 
 /** Matrix view iterator, to iterate over all elements
  * of a matrix
@@ -39,10 +47,10 @@ private:
 	int col{0};
 	MatrixView* mat;
 public:
-	MatrixIterator(MatrixView* view)
+	MatrixIterator(MatrixView* view, bool end)
 		: mat(view)
 	{
-		if (not view) {
+		if (end) {
 			col = 0;
 			row = mat->num_rows();
 		}
@@ -87,6 +95,40 @@ public:
 		return (*mat)(row, col);
 	}
 };
+
+struct SizeMismatchError : public std::runtime_error {
+	template<int trows1, int tcols1, int tstride1, bool staticMatrix1,
+	         int trows2, int tcols2, int tstride2, bool staticMatrix2>
+	SizeMismatchError(MatrixViewBase<trows1, tcols1, tstride1, staticMatrix1> const& lhs,
+	                  MatrixViewBase<trows2, tcols2, tstride2, staticMatrix2> const& rhs,
+	                  std::string _op)
+	: std::runtime_error("size mismatch on operator " + _op + ": "
+	                         "M<" + std::to_string(lhs.num_rows()) + "x" + std::to_string(lhs.num_cols()) + ">,"
+	                         "M<" + std::to_string(rhs.num_rows()) + "x" + std::to_string(rhs.num_cols()) + ">")
+	{}
+
+	template<int trows1, int tcols1, int tstride1, bool staticMatrix1>
+	SizeMismatchError(MatrixViewBase<trows1, tcols1, tstride1, staticMatrix1> const& lhs,
+	                  std::string _op)
+	: std::runtime_error("size mismatch on operator " + _op + ": "
+	                         "M<" + std::to_string(lhs.num_rows()) + "x" + std::to_string(lhs.num_cols()) + ">")
+	{}
+
+};
+template<int trows1, int tcols1, int tstride1, bool staticMatrix1,
+         int trows2, int tcols2, int tstride2, bool staticMatrix2>
+auto sizeMismatchError(MatrixViewBase<trows1, tcols1, tstride1, staticMatrix1> const& lhs,
+                       MatrixViewBase<trows2, tcols2, tstride2, staticMatrix2> const& rhs,
+                       std::string _op) -> SizeMismatchError {
+	return SizeMismatchError(lhs, rhs, _op);
+}
+template<int trows1, int tcols1, int tstride1, bool staticMatrix1>
+auto sizeMismatchError(MatrixViewBase<trows1, tcols1, tstride1, staticMatrix1> const& lhs,
+                       std::string _op) -> SizeMismatchError {
+	return SizeMismatchError(lhs, _op);
+}
+
+
 
 
 /** Some helper class to force look up at instanciation time
@@ -177,19 +219,50 @@ auto createColViews(MatrixView<rows, cols, prop, T>& view, detail::index<nbrs...
 }
 }
 
+template<int trows, int tcols, int tstride>
+class MatrixViewBase<trows, tcols, tstride, true> {
+public:
+	constexpr int num_rows() const { return trows; }
+	constexpr int num_cols() const { return tcols; }
+	constexpr int stride() const { return tstride; }
+};
+
+template<int trows, int tcols, int tstride>
+class MatrixViewBase<trows, tcols, tstride, false> {
+protected:
+	int mRows;
+	int mCols;
+	int mStride;
+	template<int, int, typename...> friend class MatrixView;
+	template<int, int, typename, typename...> friend class Matrix;
+public:
+	int num_rows() const { return mRows; }
+	int num_cols() const { return mCols; }
+	int stride() const { return mStride; }
+};
+
+constexpr auto add_size(int v1, int v2) -> int {
+	return (v1 >= 0 and v2 >= 0)?(v1+v2):-1;
+}
+
+
 
 /** Const MatrixView with all methods that are allowed to be operated on a const matrix view
  */
 template<int trows, int tcols, typename prop, typename T>
-class MatrixView<trows, tcols, prop, T const> {
-	static_assert(trows >= 0, "Row number must be positive");
-	static_assert(tcols >= 0, "Coloumn number must be positive");
-
+class MatrixView<trows, tcols, prop, T const> : public MatrixViewBase<trows, tcols, prop::rowStride> {
 public:
 	using Type = T;
 	using Props = prop;
+
+private:
+	using TMatrix = Matrix<trows, tcols, T>;
+	using Base    = MatrixViewBase<trows, tcols, prop::rowStride>;
+
 protected:
-	T const* const cBasePtr;
+	T const* cBasePtr;
+
+	void changeBase(T const* base) { cBasePtr = base; }
 
 public:
 	explicit MatrixView(T const* base) : cBasePtr(base) {}
@@ -199,19 +272,18 @@ public:
 	template<typename T2>
 	MatrixView(MatrixView<trows, tcols, prop, T2> const& rhs) : cBasePtr(rhs.cBasePtr) {}
 
-	constexpr int num_rows() const {return trows;}
-	constexpr int num_cols() const {return tcols;}
+	using Base::stride;
 
 	// read only element access not transposed
 	template<bool t = prop::transposed, typename std::enable_if<not t>::type* = nullptr>
 	auto operator()(int row, int col) const -> T const& {
-		return *(cBasePtr + (row * prop::rowStride) + col + prop::offset*row);
+		return *(cBasePtr + (row * stride()) + col + prop::offset*row);
 	}
 
 	// read only element access transposed
 	template<bool t = prop::transposed, typename std::enable_if<t>::type* = nullptr>
 	auto operator()(int row, int col) const -> T const& {
-		return *(cBasePtr + (col * prop::rowStride) + row + prop::offset*col);
+		return *(cBasePtr + (col * stride()) + row + prop::offset*col);
 	}
 
 	// read only element access not transposed
@@ -231,6 +303,15 @@ public:
 		return (*this)(0, 0);
 	};
 
+	template<int _cols = tcols, typename std::enable_if<trows == _cols and trows < 0>::type* = nullptr>
+	explicit operator T() const {
+		if (this->num_rows() != 1 or this->num_cols() != 1) {
+			throw SizeMismatchError(*this, *this, "operator T");
+		}
+		return (*this)(0, 0);
+	};
+
+
 
 
 	// matrix access
@@ -241,20 +322,52 @@ public:
 
 	// read only view access
 	template<int subRows, int subCols>
-	auto view(int startR, int startC) const -> MatrixView<subRows, subCols, prop, T const> {
+	auto view(int startR, int startC) const -> MatrixView<subRows, subCols, typename prop::Static, T const> {
+		static_assert(subRows >= 0, "Row number must be positive");
+		static_assert(subCols >= 0, "Coloumn number must be positive");
 		static_assert(subRows <= trows, "rows must be smaller or equal to the current view");
 		static_assert(subCols <= tcols, "cols must be smaller or equal to the current view");
 
-		return MatrixView<subRows, subCols, prop, T const> {&((*this)(startR, startC))};
+		return MatrixView<subRows, subCols, typename prop::Static, T const> {&((*this)(startR, startC))};
 	}
 
+	// read only view access
+	auto view(int startR, int startC, int rows, int cols) const -> MatrixView<-1, -1, typename prop::Dynamic, T const> {
+		auto view = MatrixView<-1, -1, typename prop::Dynamic, T const> {&((*this)(startR, startC))};
+		view.mRows = rows;
+		view.mCols = cols;
+		view.mStride = this->stride();
+		return view;
+	}
+
+	template <bool dynamic = prop::dynamic, typename std::enable_if<not dynamic>::type* = nullptr>
 	auto view_row(int startR) const -> MatrixView<1, tcols, prop, T const> {
 		return MatrixView<1, tcols, prop, T const> {&((*this)(startR, 0))};
 	}
 
+	template <bool dynamic = prop::dynamic, typename std::enable_if<not dynamic>::type* = nullptr>
 	auto view_col(int startC) const -> MatrixView<trows, 1, prop, T const> {
 		return MatrixView<trows, 1, prop, T const> {&((*this)(0, startC))};
 	}
+
+	template <bool dynamic = prop::dynamic, typename std::enable_if<dynamic>::type* = nullptr>
+	auto view_row(int startR) const -> MatrixView<1, tcols, prop, T const> {
+		auto view = MatrixView<1, tcols, prop, T const> {&((*this)(startR, 0))};
+		view.mRows   = 1;
+		view.mCols   = this->mCols;
+		view.mStride = this->mStride;
+		return view;
+	}
+
+	template <bool dynamic = prop::dynamic, typename std::enable_if<dynamic>::type* = nullptr>
+	auto view_col(int startC) const -> MatrixView<trows, 1, prop, T const> {
+		auto view = MatrixView<trows, 1, prop, T const> {&((*this)(0, startC))};
+		view.mRows   = this->mRows;
+		view.mCols   = 1;
+		view.mStride = this->mStride;
+		return view;
+	}
+
 
 	// array with view on a range of rows (inclusive end)
 	template<int start=0, int end=trows-1, int stride=1>
@@ -276,39 +389,68 @@ public:
 
 	// read only iterator
 	auto begin() const -> MatrixIterator<MatrixView<trows, tcols, prop, T const> const> {
-		return {this};
+		return {this, false};
 	}
 	auto end() const -> MatrixIterator<MatrixView<trows, tcols, prop, T const> const> {
-		return {nullptr};
+		return {this, true};
 	}
 
-	template <int cols, typename oProp>
-	auto join_rows(MatrixView<trows, cols, oProp, T const> const& _view) const -> Matrix<trows, tcols+cols, T> {
-		Matrix<trows, tcols+cols, T> retValue;
+	template <int cols, typename oProp, typename std::enable_if<not Props::dynamic and not oProp::dynamic>::type* = nullptr>
+	auto join_rows(MatrixView<trows, cols, oProp, T const> const& _view) const -> Matrix<trows, add_size(tcols, cols), T> {
+		Matrix<trows, add_size(tcols, cols), T> retValue(this->num_rows(), this->num_cols() + _view.num_cols());
 		retValue.template view<trows, tcols>(0, 0)    = *this;
 		retValue.template view<trows, cols>(0, tcols) = _view;
 		return retValue;
 	}
 
-	template <int rows, typename oProp>
-	auto join_cols(MatrixView<rows, tcols, oProp, T const> const& _view) const -> Matrix<trows+rows, tcols, T> {
-		Matrix<trows+rows, tcols, T> retValue;
+	template <int cols, typename oProp, typename std::enable_if<Props::dynamic or oProp::dynamic>::type* = nullptr>
+	auto join_rows(MatrixView<trows, cols, oProp, T const> const& _view) const -> Matrix<trows, add_size(tcols, cols), T> {
+
+		if (this->num_rows() != _view.num_rows()) {
+			throw SizeMismatchError(*this, _view, "join_rows");
+		}
+
+		Matrix<trows, add_size(tcols, cols), T> ret(this->num_rows(), this->num_cols() + _view.num_cols());
+		ret.view(0, 0, this->num_rows(), this->num_cols()) = *this;
+		ret.view(0, this->num_cols(), _view.num_rows(), _view.num_cols()) = _view;
+		return ret;
+	}
+
+
+	template <int rows, typename oProp, typename std::enable_if<not Props::dynamic and not oProp::dynamic>::type* = nullptr>
+	auto join_cols(MatrixView<rows, tcols, oProp, T const> const& _view) const -> Matrix<add_size(trows, rows), tcols, T> {
+		Matrix<add_size(trows, rows), tcols, T> retValue;
 		retValue.template view<trows, tcols>(0, 0)    = *this;
 		retValue.template view<rows,  tcols>(trows, 0) = _view;
 		return retValue;
 	}
 
+	template <int rows, typename oProp, typename std::enable_if<Props::dynamic or oProp::dynamic>::type* = nullptr>
+	auto join_cols(MatrixView<rows, tcols, oProp, T const> const& _view) const -> Matrix<add_size(trows, rows), tcols, T> {
+		if (this->num_cols() != _view.num_cols()) {
+			throw SizeMismatchError(*this, _view, "join_cols");
+		}
+
+		Matrix<add_size(trows, rows), tcols, T> ret(this->num_rows() + _view.num_rows(), this->num_cols());
+		ret.view(0, 0, this->num_rows(), this->num_cols()) = *this;
+		ret.view(this->num_rows(), 0, _view.num_rows(), _view.num_cols()) = _view;
+		return ret;
+	}
 
 
-	// negation
-	auto operator-() const -> Matrix<trows, tcols, T> {
-		Matrix<trows, tcols, T> ret;
-		for (int r(0); r < trows; ++r) {
-			for (int c(0); c < tcols; ++c) {
-				ret(r, c) = -(*this)(r, c);
+	auto applyElementWise(std::function<T(T const&)> f) const -> TMatrix {
+		TMatrix ret(this->num_rows(), this->num_cols());
+		for (int r(0); r < this->num_rows(); ++r) {
+			for (int c(0); c < this->num_cols(); ++c) {
+				ret(r, c) = f((*this)(r, c));
 			}
 		}
 		return ret;
+	}
+
+	// negation
+	auto operator-() const -> Matrix<trows, tcols, T> {
+		return applyElementWise([](T const& v) { return -v; });
 	}
 
 	// compute inverse
@@ -318,9 +460,20 @@ public:
 	auto det() const -> T;
 
 	// read only transposed
+	template <bool dynamic = prop::dynamic, typename std::enable_if<not dynamic>::type* = nullptr>
 	auto t_view() const -> MatrixView<tcols, trows, typename prop::Transposed, T const> {
 		return MatrixView<tcols, trows, typename prop::Transposed, T const> {cBasePtr};
 	}
+
+	template <bool dynamic = prop::dynamic, typename std::enable_if<dynamic>::type* = nullptr>
+	auto t_view() const -> MatrixView<tcols, trows, typename prop::Transposed, T const> {
+		auto view = MatrixView<tcols, trows, typename prop::Transposed, T const> {cBasePtr};
+		view.mRows   = this->mCols;
+		view.mCols   = this->mRows;
+		view.mStride = this->mStride;
+		return view;
+	}
+
 	
 	auto t() const -> Matrix<tcols, trows, T> {
 		return t_view();
@@ -343,11 +496,12 @@ public:
 
 	/* frobenius norm */
 	auto norm() const -> T {
-		return std::sqrt(normSqr());
+		using namespace std;
+		return sqrt(normSqr());
 	}
 
 	auto normalized() const -> Matrix<trows, tcols, T> {
-		return (*this) * (1./norm());
+		return (*this) * (T(1.)/norm());
 	}
 
 	// compute svd so that *this = svd.U * make_diag(svd.S) * svd.V.t()
@@ -379,8 +533,10 @@ template<int trows, int tcols, typename prop, typename T>
 class MatrixView<trows, tcols, prop, T> : public MatrixView<trows, tcols, prop, T const> {
 private:
 	using CView = MatrixView<trows, tcols, prop, T const>;
+	using Base  = MatrixViewBase<trows, tcols, prop::rowStride>;
+
 protected:
-	T* const basePtr;
+	T* basePtr;
 
 public:
 	explicit MatrixView(T* base) : CView(base), basePtr(base) {}
@@ -388,19 +544,22 @@ public:
 	MatrixView(MatrixView& rhs) : CView(rhs), basePtr(rhs.basePtr) {}
 	MatrixView(MatrixView&& rhs) : CView(rhs), basePtr(rhs.basePtr) {}
 
+	void changeBase(T* base) { CView::changeBase(base); basePtr = base; }
+
 	// pass through
-	using MatrixView<trows, tcols, prop, T const>::operator();
+	using CView::stride;
+	using CView::operator();
 
 	// value element access
 	template<bool t = prop::transposed, typename std::enable_if<not t>::type* = nullptr>
 	auto operator()(int row, int col) -> T& {
-		return *(basePtr + (row * prop::rowStride) + col + row * prop::offset);
+		return *(basePtr + (row * stride()) + col + row * prop::offset);
 	}
 
 	// value element access
 	template<bool t = prop::transposed, typename std::enable_if<t>::type* = nullptr>
 	auto operator()(int row, int col) -> T& {
-		return *(basePtr + (col * prop::rowStride) + row + col * prop::offset);
+		return *(basePtr + (col * stride()) + row + col * prop::offset);
 	}
 
 	// access if matrix is one dimensional
@@ -425,13 +584,44 @@ public:
 		return MatrixView<subRows, subCols, prop, T> {&((*this)(startR, startC))};
 	}
 
+	// view access
+	auto view(int startR, int startC, int rows, int cols) -> MatrixView<-1, -1, typename prop::Dynamic, T> {
+		auto view = MatrixView<-1, -1, typename prop::Dynamic, T> {&((*this)(startR, startC))};
+		view.mRows = rows;
+		view.mCols = cols;
+		view.mStride = this->stride();
+		return view;
+	}
+
+
+	template <bool dynamic = prop::dynamic, typename std::enable_if<not dynamic>::type* = nullptr>
 	auto view_row(int startR) -> MatrixView<1, tcols, prop, T> {
 		return MatrixView<1, tcols, prop, T> {&((*this)(startR, 0))};
 	}
 
+	template <bool dynamic = prop::dynamic, typename std::enable_if<not dynamic>::type* = nullptr>
 	auto view_col(int startC) -> MatrixView<trows, 1, prop, T> {
 		return MatrixView<trows, 1, prop, T> {&((*this)(0, startC))};
 	}
+
+	template <bool dynamic = prop::dynamic, typename std::enable_if<dynamic>::type* = nullptr>
+	auto view_row(int startR) -> MatrixView<1, tcols, prop, T> {
+		auto view = MatrixView<1, tcols, prop, T> {&((*this)(startR, 0))};
+		view.mRows   = 1;
+		view.mCols   = this->mCols;
+		view.mStride = this->mStride;
+		return view;
+	}
+
+	template <bool dynamic = prop::dynamic, typename std::enable_if<dynamic>::type* = nullptr>
+	auto view_col(int startC) -> MatrixView<trows, 1, prop, T> {
+		auto view = MatrixView<trows, 1, prop, T> {&((*this)(0, startC))};
+		view.mRows   = this->mRows;
+		view.mCols   = 1;
+		view.mStride = this->mStride;
+		return view;
+	}
+
 
 	// array with view on a range of rows (inclusive end)
 	template<int start=0, int end=trows-1, int stride=1>
@@ -468,8 +658,8 @@ public:
 
 	template <typename oProp>
 	auto operator+=(MatrixView<trows, tcols, oProp, T const> const& rhs) -> MatrixView& {
-		for (int row(0); row < trows; ++row) {
-			for (int col(0); col < tcols; ++col) {
+		for (int row(0); row < this->num_rows(); ++row) {
+			for (int col(0); col < this->num_cols(); ++col) {
 				(*this)(row, col) += rhs(row, col);
 			}
 		}
@@ -519,8 +709,8 @@ public:
 
 
 	auto operator=(T const& rhs) -> MatrixView& {
-		for (int r(0); r < trows; ++r) {
-			for (int c(0); c < tcols; ++c) {
+		for (int r(0); r < this->num_rows(); ++r) {
+			for (int c(0); c < this->num_cols(); ++c) {
 				(*this)(r, c) = rhs;
 			}
 		}
@@ -535,8 +725,8 @@ public:
 
 	template<typename oProp>
 	auto operator=(MatrixView<trows, tcols, oProp, T const> const& rhs) -> MatrixView& {
-		for (int r(0); r < trows; ++r) {
-			for (int c(0); c < tcols; ++c) {
+		for (int r(0); r < this->num_rows(); ++r) {
+			for (int c(0); c < this->num_cols(); ++c) {
 				(*this)(r, c) = rhs(r, c);
 			}
 		}
@@ -544,17 +734,29 @@ public:
 	}
 
 	auto begin() -> MatrixIterator<MatrixView<trows, tcols, prop, T>> {
-		return {this};
+		return {this, false};
 	}
 	auto end() -> MatrixIterator<MatrixView<trows, tcols, prop, T>> {
-		return {nullptr};
+		return {this, true};
 	}
 
 	// transposed view
 	using CView::t_view;
+
+	template <bool dynamic = prop::dynamic, typename std::enable_if<not dynamic>::type* = nullptr>
 	auto t_view() -> MatrixView<tcols, trows, typename prop::Transposed, T> {
 		return MatrixView<tcols, trows, typename prop::Transposed, T> {basePtr};
 	}
+
+	template <bool dynamic = prop::dynamic, typename std::enable_if<dynamic>::type* = nullptr>
+	auto t_view() -> MatrixView<tcols, trows, typename prop::Transposed, T> {
+		auto view = MatrixView<tcols, trows, typename prop::Transposed, T> {basePtr};
+		view.mRows   = this->mCols;
+		view.mCols   = this->mRows;
+		view.mStride = this->mStride;
+		return view;
+	}
+
 
 	// diagonal view
 	using CView::diag;
@@ -564,14 +766,18 @@ public:
 };
 
 template<int rows, int cols, typename T>
-class Matrix<rows, cols, T> : public MatrixView<rows, cols, class Properties<cols>, T> {
+class Matrix<rows, cols, T> : public MatrixView<rows, cols, class Properties<false, cols>, T> {
 	T vals[rows][cols];
 public:
-	using View  = MatrixView<rows, cols, Properties<cols>, T>;
-	using CView = MatrixView<rows, cols, Properties<cols>, T const>;
+	using View  = MatrixView<rows, cols, Properties<false, cols>, T>;
+	using CView = MatrixView<rows, cols, Properties<false, cols>, T const>;
 
 
 	Matrix() : View(&(vals[0][0])) {}
+
+	Matrix(int _rows, int _cols) : Matrix() {
+		// this function is needed for compatiblity of dynamic matrices
+	}
 
 	Matrix(T initVal) : View(&(vals[0][0]))  {
 		((View*)(this))->operator=(initVal);
@@ -596,8 +802,8 @@ public:
 	}
 
 	Matrix(Matrix&& other) : View(&(vals[0][0])) {
-		for (int r(0); r < rows; ++r) {
-			for (int c(0); c < cols; ++c) {
+		for (int r(0); r < this->num_rows(); ++r) {
+			for (int c(0); c < this->num_cols(); ++c) {
 				(*this)(r, c) = other(r, c);
 			}
 		}
@@ -605,8 +811,8 @@ public:
 
 
 	Matrix(Matrix const& other) : View(&(vals[0][0])) {
-		for (int r(0); r < rows; ++r) {
-			for (int c(0); c < cols; ++c) {
+		for (int r(0); r < this->num_rows(); ++r) {
+			for (int c(0); c < this->num_cols(); ++c) {
 				(*this)(r, c) = other(r, c);
 			}
 		}
@@ -614,8 +820,8 @@ public:
 
 	template<typename Props>
 	Matrix(MatrixView<rows, cols, Props, T const> const& other) : View(&(vals[0][0])) {
-		for (int r(0); r < rows; ++r) {
-			for (int c(0); c < cols; ++c) {
+		for (int r(0); r < this->num_rows(); ++r) {
+			for (int c(0); c < this->num_cols(); ++c) {
 				(*this)(r, c) = other(r, c);
 			}
 		}
@@ -631,8 +837,8 @@ public:
 	auto operator=(MatrixView<rows, cols, Props, T const> const& other) && -> Matrix& = delete;
 
 	auto operator=(Matrix const& other) -> Matrix& {
-		for (int r(0); r < rows; ++r) {
-			for (int c(0); c < cols; ++c) {
+		for (int r(0); r < this->num_cols(); ++r) {
+			for (int c(0); c < this->num_rows(); ++c) {
 				(*this)(r, c) = other(r, c);
 			}
 		}
@@ -640,6 +846,105 @@ public:
 		return *this;
 	}
 };
+
+template<typename T>
+class Matrix<-1, -1, T> : public MatrixView<-1, -1, class Properties<true, -1>, T> {
+	std::vector<T> vals;
+protected:
+	void resize(int _rows, int _cols, int _stride) {
+		vals.resize(_rows * _cols);
+		this->changeBase(vals.data());
+		this->mRows = _rows;
+		this->mCols = _cols;
+		this->mStride = _stride;
+	}
+	void resize(int _rows, int _cols, int _stride, std::vector<T> values) {
+		vals = std::move(values);
+		this->changeBase(vals.data());
+		this->mRows = _rows;
+		this->mCols = _cols;
+		this->mStride = _stride;
+	}
+
+public:
+	using View  = MatrixView<-1, -1, Properties<true, -1>, T>;
+	using CView = MatrixView<-1, -1, Properties<true, -1>, T const>;
+
+
+	Matrix(int rows, int cols) : View(vals.data()) {
+		resize(rows, cols, cols);
+	}
+	Matrix() : View(vals.data()) {}
+
+	Matrix(std::vector<T> values) : View(vals.data()) {
+		int rows = values.size();
+		resize(rows, 1, 1, std::move(values));
+	}
+
+	Matrix(std::array<std::vector<T>, 1> values) : View(vals.data()) {
+		int cols = values.size();
+		resize(1, cols, cols, std::move(values));
+	}
+
+
+	Matrix(Matrix&& other) : View(vals.data()) {
+		resize(other.num_rows(), other.num_cols(), other.stride(), std::move(other.vals));
+	}
+
+
+	Matrix(Matrix const& other) : View(vals.data()) {
+		resize(other.num_rows(), other.num_cols(), other.stride(), other.vals);
+	}
+
+	template<int oth_trows, int oth_tcols, typename Props>
+	Matrix(MatrixView<oth_trows, oth_tcols, Props, T const> const& other) : View(vals.data()) {
+		resize(other.num_rows(), other.num_cols(), other.num_cols());
+		for (int r(0); r < other.num_rows(); ++r) {
+			for (int c(0); c < other.num_cols(); ++c) {
+				(*this)(r, c) = other(r, c);
+			}
+		}
+	}
+
+	template<int oth_trows, int oth_tcols, typename Props>
+	auto operator=(MatrixView<oth_trows, oth_tcols, Props, T const> const& other) & -> Matrix& {
+		resize(other.num_rows(), other.num_cols(), other.num_cols());
+		for (int r(0); r < other.num_rows(); ++r) {
+			for (int c(0); c < other.num_cols(); ++c) {
+				(*this)(r, c) = other(r, c);
+			}
+		}
+		return *this;
+	}
+
+	template<int oth_trows, int oth_tcols, typename Props>
+	auto operator=(MatrixView<oth_trows, oth_tcols, Props, T const> const& other) && -> Matrix& = delete;
+
+	auto operator=(Matrix const& other) -> Matrix& {
+		resize(other.num_rows(), other.num_cols(), other.num_cols());
+		for (int r(0); r < other.num_rows(); ++r) {
+			for (int c(0); c < other.num_cols(); ++c) {
+				(*this)(r, c) = other(r, c);
+			}
+		}
+		return *this;
+	}
+};
+
+template<int trows, typename T>
+class Matrix<trows, -1, T> : public Matrix<-1, -1, T> {
+public:
+	using Matrix<-1, -1, T>::Matrix;
+};
+
+template<int tcols, typename T>
+class Matrix<-1, tcols, T> : public Matrix<-1, -1, T> {
+public:
+	using Matrix<-1, -1, T>::Matrix;
+};
+
+
+
 
 // create matrix
 template<int rows, int cols, typename T = DefaultType>
@@ -716,27 +1021,16 @@ auto luDecomposition_L(MatrixView<rows, cols, Props, T const> const& _mat) -> Ma
 template <int rows, int cols, typename Props, typename T>
 auto minorMat(MatrixView<rows, cols, Props, T const> const& _view, int _row, int _col) -> Matrix<rows-1, cols-1, T> {
 
-	Matrix<rows-1, cols-1, T> retMat;
+	auto retRows = _view.num_rows()-1;
+	auto retCols = _view.num_cols()-1;
 
-	for(int i = 0; i < _row; ++i) {
-		for(int j = 0; j < _col; ++j) {
-			retMat(i, j) = _view(i, j);
-		}
+	Matrix<rows-1, cols-1, T> retMat(retRows, retCols);
 
-		for(int j = _col+1; j < cols; ++j) {
-			retMat(i, j-1) = _view(i, j);
-		}
-	}
+	retMat.view(   0,    0,         _row, _col)         = _view.view(     0,      0,           _row, _col);
+	retMat.view(_row,    0, retRows-_row, _col)         = _view.view(_row+1,      0, retRows-_row-1, _col);
+	retMat.view(   0, _col,         _row, retCols-_col) = _view.view(     0, _col+1,           _row, retCols-_col-1);
+	retMat.view(_row, _col, retRows-_row, retCols-_col) = _view.view(_row+1, _col+1, retRows-_row-1, retCols-_col-1);
 
-	for(int i = _row+1; i < rows; ++i) {
-		for(int j = 0; j < cols; ++j) {
-			retMat(i-1, j) = _view(i, j);
-		}
-
-		for(int j = _col+1; j < cols; ++j) {
-			retMat(i-1, j-1) = _view(i, j);
-		}
-	}
 	return retMat;
 }
 
@@ -921,10 +1215,13 @@ auto operator-(T const& lhs, MatrixView<rows, cols, Props, T const> const& rhs) 
  */
 template<int lrows, int mate, int rcols, typename P1, typename P2, typename T>
 auto operator*(MatrixView<lrows, mate, P1, T const> const& lhs,  MatrixView<mate, rcols, P2, T const> const& rhs) -> Matrix<lrows, rcols, T> {
-	Matrix<lrows, rcols, T> ret;
-	for (int oRow(0); oRow < lrows; ++oRow) {
+	if (lhs.num_cols() != rhs.num_rows()) {
+		throw SizeMismatchError(lhs, rhs, "multiplikation");
+	}
+	Matrix<lrows, rcols, T> ret(lhs.num_rows(), rhs.num_cols());
+	for (int oRow(0); oRow < lhs.num_rows(); ++oRow) {
 		auto lhsRow = lhs.view_row(oRow);
-		for (int oCol(0); oCol < rcols; ++oCol) {
+		for (int oCol(0); oCol < rhs.num_cols(); ++oCol) {
 			ret(oRow, oCol) = lhsRow * rhs.view_col(oCol);
 		}
 	}
@@ -933,19 +1230,14 @@ auto operator*(MatrixView<lrows, mate, P1, T const> const& lhs,  MatrixView<mate
 template<int mate, typename P1, typename P2, typename T>
 auto operator*(MatrixView<1, mate, P1, T const> const& lhs,  MatrixView<mate, 1, P2, T const> const& rhs) -> Matrix<1, 1, T> {
 	T accumulator(0.);
-	for (int i(0); i < mate; ++i) {
+	for (int i(0); i < lhs.num_cols(); ++i) {
 		accumulator += lhs(i) * rhs(i);
 	}
 	return Matrix<1, 1, T>(accumulator);
 }
 template<int rows, int cols, typename Props, typename T>
 auto operator*(MatrixView<rows, cols, Props, T const> const& lhs, T const& rhs) -> Matrix<rows, cols, T> {
-	Matrix<rows, cols, T> ret;
-	for (int oRow(0); oRow < rows; ++oRow) {
-		for (int oCol(0); oCol < cols; ++oCol) {
-			ret(oRow, oCol) = lhs(oRow, oCol) * rhs;
-		}
-	}
+	auto ret = lhs.applyElementWise([&rhs] (T const& v) { return v * rhs; });
 	return ret;
 }
 template<int rows, int cols, typename Props, typename T>
@@ -1015,34 +1307,32 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 		g = scale = 0.0;
 		T s = 0.;
 		if (i < rows) {
-			for (int k = i;k < rows; k++) scale += abs(U(k, i));
+			auto row_view = U.view(i, i, rows-i, 1);
+			scale = sum(abs(row_view));
 			if (scale) {
-				for (int k = i; k < rows; k++) {
-					U(k, i) /= scale;
-					s += U(k, i)*U(k, i);
-				}
+				row_view *= T(1.) / scale;
+				s = row_view.normSqr();
+
 				T f = U(i, i);
-				g = -signCopy(sqrt(s),f);
-				T h = f*g-s;
-				U(i, i)=f-g;
+				g = -signCopy(sqrt(s), f);
+				T h = f * g - s;
+				U(i, i) = f - g;
 				for (int j = l; j < cols; j++) {
-					s=0;
-					for (int k = i; k < rows; k++) s += U(k, i)*U(k, j);
-					f=s/h;
-					for (int k = i; k < rows; k++) U(k, j) += f*U(k, i);
+					auto col_view = U.view(i, j, rows-i, 1);
+					auto s = T(row_view.t_view() * col_view);
+					col_view += row_view * (s/h);
 				}
-				for (int k = i; k < rows; k++) U(k, i) *= scale;
+				row_view *= scale;
 			}
 		}
 		S(i) = scale *g;
 		g = s = scale = 0.0;
 		if (i < rows && i+1 < cols) {
-			for (int k = l; k < cols; k++) scale += abs(U(i, k));
+			auto col_view = U.view(i, l, 1, cols-l);
+			scale = sum(abs(col_view));
 			if (scale) {
-				for (int k = l; k < cols; k++) {
-					U(i, k) /= scale;
-					s += U(i, k)*U(i, k);
-				}
+				col_view *= T(1.) / scale;
+				s = col_view.normSqr();
 				T f = U(i, l);
 				g = -signCopy(sqrt(s),f);
 				T h = f*g-s;
@@ -1104,7 +1394,8 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 				for (int i = l; i < k; i++) {
 					T f = s*rv1[i];
 					rv1[i] = c*rv1[i];
-					if ((T)(std::abs(f)+anorm) == anorm) break;
+					using namespace std;
+					if (abs(f)+anorm == anorm) break;
 					T h = pythag(f,S(i));
 					S(i) = h;
 					h = 1./h;
@@ -1208,13 +1499,10 @@ auto MatrixView<trows, tcols, props, T const>::svd() const -> SVD<trows, tcols, 
 // compute abs global
 template<int trows, int tcols, typename props, typename T>
 auto abs(MatrixView<trows, tcols, props, T const> const& _view) -> Matrix<trows, tcols, T> {
-	Matrix<trows, tcols, T> ret;
-	for (int r(0); r < trows; ++r) {
-		for (int c(0); c < tcols; ++c) {
-			using std::abs;
-			ret(r, c) = abs(_view(r, c));
-		}
-	}
+	auto ret = _view.applyElementWise([](T const& v) {
+		using std::abs;
+		return abs(v);
+	});
 
 	return ret;
 }
@@ -1222,8 +1510,8 @@ auto abs(MatrixView<trows, tcols, props, T const> const& _view) -> Matrix<trows,
 template<int trows, int tcols, typename props, typename T>
 auto sum(MatrixView<trows, tcols, props, T const> const& _view) -> T {
 	T ret = 0.;
-	for (int r(0); r < trows; ++r) {
-		for (int c(0); c < tcols; ++c) {
+	for (int r(0); r < _view.num_rows(); ++r) {
+		for (int c(0); c < _view.num_cols(); ++c) {
 			ret += _view(r, c);
 		}
 	}
