@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <array>
 #include <complex>
-#include <functional>
 #include <iterator>
 #include <type_traits>
 #include <vector>
@@ -449,19 +448,13 @@ public:
 	}
 
 
-	auto applyElementWise(std::function<T(T const&)> f) const -> TMatrix {
-		TMatrix ret(this->num_rows(), this->num_cols());
-		for (int r(0); r < this->num_rows(); ++r) {
-			for (int c(0); c < this->num_cols(); ++c) {
-				ret(r, c) = f((*this)(r, c));
-			}
-		}
-		return ret;
-	}
-
 	// negation
 	auto operator-() const -> Matrix<trows, tcols, T> {
-		return applyElementWise([](T const& v) { return -v; });
+		Matrix<trows, tcols, T> ret = *this;
+		for (auto& v : ret) {
+			v = -v;
+		}
+		return ret;
 	}
 
 	// compute inverse
@@ -1307,7 +1300,10 @@ auto operator*(MatrixView<1, mate, P1, T const> const& lhs,  MatrixView<mate, 1,
 }
 template<int rows, int cols, typename Props, typename T>
 auto operator*(MatrixView<rows, cols, Props, T const> const& lhs, T const& rhs) -> Matrix<rows, cols, T> {
-	auto ret = lhs.applyElementWise([&rhs] (T const& v) { return v * rhs; });
+	Matrix<rows, cols, T> ret = lhs;
+	for (auto& v : ret) {
+		v *= rhs;
+	}
 	return ret;
 }
 template<int rows, int cols, typename Props, typename T>
@@ -1572,11 +1568,11 @@ auto MatrixView<trows, tcols, props, T const>::svd() const -> SVD<trows, tcols, 
 // compute abs global
 template<int trows, int tcols, typename props, typename T>
 auto abs(MatrixView<trows, tcols, props, T const> const& _view) -> Matrix<trows, tcols, T> {
-	auto ret = _view.applyElementWise([](T const& v) {
-		using std::abs;
-		return abs(v);
-	});
-
+	using std::abs;
+	Matrix<trows, tcols, T> ret = _view;
+	for (auto& v : ret) {
+		v = abs(v);
+	}
 	return ret;
 }
 
