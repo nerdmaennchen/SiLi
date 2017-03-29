@@ -270,9 +270,10 @@ public:
 	explicit MatrixView(T const* base) : cBasePtr(base) {}
 
 	MatrixView(MatrixView const& rhs) : cBasePtr(rhs.cBasePtr) {}
+	MatrixView(MatrixView&& rhs)      : cBasePtr(rhs.cBasePtr) {}
 
 	template<typename T2>
-	MatrixView(MatrixView<trows, tcols, prop, T2> const& rhs) : cBasePtr(rhs.cBasePtr) {}
+	explicit MatrixView(MatrixView<trows, tcols, prop, T2> const& rhs) : cBasePtr(rhs.cBasePtr) {}
 
 	using Base::offset;
 	using Base::stride;
@@ -488,7 +489,7 @@ public:
 		return view;
 	}
 
-	
+
 	auto t() const -> Matrix<tcols, trows, T> {
 		return t_view();
 	}
@@ -692,7 +693,8 @@ public:
 
 	template <typename oProp>
 	auto operator+=(MatrixView<trows, tcols, oProp, T const> const& rhs) -> MatrixView& {
-		if (this->num_rows() != rhs.num_cols()) {
+		if (this->num_rows() != rhs.num_rows() or
+		    this->num_cols() != rhs.num_cols()) {
 			throw SizeMismatchError(*this, rhs, "operator+=");
 		}
 
@@ -750,6 +752,7 @@ public:
 		for (int r(0); r < this->num_rows(); ++r) {
 			for (int c(0); c < this->num_cols(); ++c) {
 				(*this)(r, c) = rhs;
+
 			}
 		}
 		return *this;
@@ -831,7 +834,7 @@ public:
 		// this function is needed for compatiblity of dynamic matrices
 	}
 
-	Matrix(T initVal) : View(&(vals[0][0]))  {
+	explicit Matrix(T initVal) : View(&(vals[0][0]))  {
 		((View*)(this))->operator=(initVal);
 	}
 
@@ -879,12 +882,7 @@ public:
 		}
 	}
 
-	template<typename Props>
-	auto operator=(MatrixView<rows, cols, Props, T const> const& other) & -> Matrix& {
-		View::operator=(other);
-		return *this;
-	}
-
+	using View::operator=;
 	template<typename Props>
 	auto operator=(MatrixView<rows, cols, Props, T const> const& other) && -> Matrix& = delete;
 
@@ -1025,7 +1023,8 @@ auto make_eye() -> Matrix<rows, cols, T> {
 // create matrix from vector
 template<int rows, typename T, typename Prop>
 auto make_diag(MatrixView<rows, 1, Prop, T const> const& _view) -> Matrix<rows, rows, T> {
-	Matrix<rows, rows, T> retVal(0);
+	Matrix<rows, rows, T> retVal(_view.num_rows(), _view.num_rows());
+	retVal.operator=(T(0.));
 	retVal.diag() = _view;
 	return retVal;
 }
@@ -1033,14 +1032,16 @@ auto make_diag(MatrixView<rows, 1, Prop, T const> const& _view) -> Matrix<rows, 
 template<int rows, int cols, typename T, typename Prop>
 auto make_diag(MatrixView<rows, 1, Prop, T const> const& _view) -> Matrix<rows, cols, T> {
 	static_assert(cols >= rows, "cannot build a smaller diagonal matrix than the input vector size");
-	Matrix<rows, cols, T> retVal(0);
+	Matrix<rows, cols, T> retVal(_view.num_rows(), cols);
+	retVal = T(0.);
 	retVal.diag() = _view;
 	return retVal;
 }
 template<int rows, int cols, typename T, typename Prop>
 auto make_diag(MatrixView<cols, 1, Prop, T const> const& _view) -> Matrix<rows, cols, T> {
 	static_assert(rows >= cols, "cannot build a smaller diagonal matrix than the input vector size");
-	Matrix<rows, cols, T> retVal(0);
+	Matrix<rows, cols, T> retVal(_view.num_rows(), cols);
+	retVal = T(0.);
 	retVal.diag() = _view;
 	return retVal;
 }
@@ -1289,7 +1290,7 @@ auto operator*(MatrixView<lrows, mate, P1, T const> const& lhs,  MatrixView<mate
 	}
 	Matrix<lrows, rcols, T> ret(lhs.num_rows(), rhs.num_cols());
 	for (int oRow(0); oRow < lhs.num_rows(); ++oRow) {
-		auto lhsRow = lhs.view_row(oRow);
+		auto lhsRow { lhs.view_row(oRow) };
 		for (int oCol(0); oCol < rhs.num_cols(); ++oCol) {
 			ret(oRow, oCol) = lhsRow * rhs.view_col(oCol);
 		}

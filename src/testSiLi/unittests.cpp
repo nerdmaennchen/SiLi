@@ -42,7 +42,7 @@ TEST(SiLi, init1) {
 
 TEST(SiLi, matrixView_access) {
 	M<2, 2>  m({{11, 12}, {21, 22}});
-	M<2, 2>::View view = m;
+	M<2, 2>::View view { m.view<2, 2>(0, 0) };
 
 	EXPECT_EQ(2, m.num_rows());
 	EXPECT_EQ(2, m.num_cols());
@@ -69,7 +69,7 @@ TEST(SiLi, matrixView_access) {
 
 TEST(SiLi, matrixView_access_write) {
 	M<2, 2>  m({{11, 12}, {21, 22}});
-	M<2, 2>::View view = m;
+	M<2, 2>::View view { m.view<2, 2>(0, 0) };
 
 	EXPECT_EQ(11,  m(0, 0));
 	EXPECT_EQ(21,  m(1, 0));
@@ -99,8 +99,8 @@ TEST(SiLi, matrixView_access_write) {
 
 TEST(SiLi, matrixView_const_view) {
 	M<2, 2>  m({{11, 12}, {21, 22}});
-	M<2, 2>::View const view = m;
-	M<2, 2>::CView view2 = m;
+	M<2, 2>::View const view { m.view<2, 2>(0, 0) };
+	M<2, 2>::CView view2 { m.view<2, 2>(0, 0) };
 
 	EXPECT_EQ(11,  view(0, 0));
 	EXPECT_EQ(21,  view(1, 0));
@@ -124,7 +124,7 @@ TEST(SiLi, matrixView_const_view) {
 
 TEST(SiLi, matrixView_view_to_mat) {
 	M<2, 2>  m({{11, 12}, {21, 22}});
-	M<2, 2>::View const view = m;
+	M<2, 2>::View const view { m.view<2, 2>(0, 0) };
 
 	EXPECT_EQ(11,  view(0, 0));
 	EXPECT_EQ(21,  view(1, 0));
@@ -151,16 +151,16 @@ TEST(SiLi, matrixView_view) {
 	M<3, 3>  m({{11, 12, 13},
 	            {21, 22, 23},
 	            {31, 32, 33}});
-	auto const view1 = m.view<2, 1>(1, 2);
+	auto const view1 { m.view<2, 1>(1, 2) };
 
 	EXPECT_EQ(23,  view1(0, 0));
 	EXPECT_EQ(33,  view1(1, 0));
 
-	auto view2 = m.view<2, 1>(1, 2);
+	auto view2 { m.view<2, 1>(1, 2) };
 	EXPECT_EQ(23,  view2(0, 0));
 	EXPECT_EQ(33,  view2(1, 0));
 
-	auto view3 = m.view<2, 1>(1, 2).view<2, 1>(0, 0);
+	auto view3 { m.view<2, 1>(1, 2).view<2, 1>(0, 0) };
 	EXPECT_EQ(23,  view3(0, 0));
 	EXPECT_EQ(33,  view3(1, 0));
 }
@@ -722,7 +722,7 @@ TEST(SiLi, matrixView_make_diag2) {
 	auto v = SiLi::make_mat<3, 1, double>({{11.},
 	                         {21.},
 	                         {31.}});
-	auto m = make_diag<3,4>(v);
+	auto m = make_diag<3, 4>(v);
 
 	EXPECT_EQ(11., m(0, 0));
 	EXPECT_EQ(0.,  m(0, 1));
