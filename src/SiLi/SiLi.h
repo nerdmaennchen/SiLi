@@ -127,6 +127,11 @@ auto sizeMismatchError(MatrixViewBase<trows1, tcols1, tstride1, toffset1, static
 	return SizeMismatchError(lhs, _op);
 }
 
+/*typename <typename ...T>
+struct ifDynamic {
+
+};*/
+
 
 
 
@@ -344,7 +349,7 @@ public:
 		return view;
 	}
 
-	auto operator()(int startR, int startC, int rows, int cols) const -> decltype(view(startR, startC, rows, cols)) {
+	auto operator()(int startR, int startC, int rows, int cols) const -> decltype(this->view(startR, startC, rows, cols)) {
 		return view(startR, startC, rows, cols);
 	}
 
@@ -615,7 +620,7 @@ public:
 		return view;
 	}
 
-	auto operator()(int startR, int startC, int rows, int cols) -> decltype(view(startR, startC, rows, cols)) {
+	auto operator()(int startR, int startC, int rows, int cols) -> decltype(this->view(startR, startC, rows, cols)) {
 		return view(startR, startC, rows, cols);
 	}
 
@@ -1005,6 +1010,12 @@ auto make_vec(T const (&values)[rows]) -> Matrix<rows, 1, T> {
 	return {values};
 }
 
+// create matrix
+template<int rows, int cols, typename T = DefaultType>
+auto make_mat() -> Matrix<rows, cols, T> {
+	return {0.};
+}
+
 // create identity matrix
 template<int rows, int cols, typename T = DefaultType>
 auto make_eye() -> Matrix<rows, cols, T> {
@@ -1283,9 +1294,9 @@ auto operator*(MatrixView<lrows, mate, P1, T const> const& lhs,  MatrixView<mate
 	}
 	Matrix<lrows, rcols, T> ret(lhs.num_rows(), rhs.num_cols());
 	for (int oRow(0); oRow < lhs.num_rows(); ++oRow) {
-		auto lhsRow { lhs.view_row(oRow) };
+		auto lhsRow = lhs.view_row(oRow);
 		for (int oCol(0); oCol < rhs.num_cols(); ++oCol) {
-			ret(oRow, oCol) = lhsRow * rhs.view_col(oCol);
+			ret(oRow, oCol) = T(lhsRow * rhs.view_col(oCol));
 		}
 	}
 	return ret;
