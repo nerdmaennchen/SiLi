@@ -160,7 +160,7 @@ template<int... I>
 struct index {
 	template<int n>
 	using prepend = index<n, I...>;
-	constexpr int size() {
+	constexpr int size() const {
 		return sizeof...(I);
 	}
 };
@@ -1417,6 +1417,19 @@ template<int rows, int cols, typename Props, typename T>
 auto operator*(T const& lhs, MatrixView<rows, cols, Props, T const> const& rhs) -> Matrix<rows, cols, T> {
 	return rhs * lhs;
 }
+//element wise product
+// matrix elementwise addition
+template<int rows, int cols, typename P1, typename P2, typename T>
+auto eProd(MatrixView<rows, cols, P1, T const > const& lhs, MatrixView<rows, cols, P2, T const> const& rhs) -> Matrix<rows, cols, T> {
+	Matrix<rows, cols, T> ret(lhs.num_rows(), lhs.num_cols());
+	for (int row(0); row < lhs.num_rows(); ++row) {
+		for (int col(0); col < lhs.num_cols(); ++col) {
+			ret(row, col) = lhs(row, col) * rhs(row, col);
+		}
+	}
+	return ret;
+}
+
 
 /**
  * cross product for 3x1 and 3x1 matrices
@@ -1788,5 +1801,25 @@ std::ostream& operator<< (std::ostream& stream, SiLi::MatrixView<rows, cols, Pro
 
 template<int rows, typename T = DefaultType>
 using Vector = Matrix<rows, 1, T>;
+
+template <int rows, int cols, typename P, typename T>
+auto toVec(MatrixView<rows, cols, P, T const> const& _in) -> Matrix<rows*cols, 1, T> {
+	Matrix<rows*cols, 1, T> ret;
+	int i(0);
+	for (auto const& e : _in) {
+		ret(i) = e;
+		++i;
+	}
+	return ret;
+}
+template <int rows, int cols, typename P, typename T>
+void toMat(MatrixView<rows*cols, 1, P, T const> const& _in, Matrix<rows, cols, T>& _ret) {
+	int i(0);
+	for (auto& e : _ret) {
+		e = _in(i);
+		++i;
+	}
+}
+
 
 }
