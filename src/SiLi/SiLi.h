@@ -1233,6 +1233,10 @@ auto det(MatrixView<rows, cols, Props, T const> const& mat) -> T {
 	for (int i(0); i < L.num_rows(); ++i) {
 		retValue *= L(i, i);
 	}
+	using std::isfinite;
+	if (not isfinite(retValue)) {
+		retValue = T{0.};
+	}
 	return retValue;
 }
 

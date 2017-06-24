@@ -1174,6 +1174,35 @@ TEST(SiLi, matrixView_colRange2) {
 	EXPECT_EQ(cols[1](0, 0), 01.);
 	EXPECT_EQ(cols[1](1, 0), 11.);
 }
+
+TEST(SiLi, inv10x10) {
+	SiLi::Matrix<10, 10, double> mat{0};
+	mat.diag() = 0.1;
+
+	auto inv = mat.inv();
+
+	for (int row(0); row < mat.num_rows(); ++row) {
+		for (int col(0); col < mat.num_cols(); ++col) {
+			if (col == row) {
+				EXPECT_NEAR(10., inv(row, col), 1e-9);
+			} else {
+				EXPECT_NEAR(0., inv(row, col), 1e-9);
+			}
+		}
+	}
+
+/*
+	std::vector<double> v {1, 0, 0, 0, 1, 0, 0, 0, 1};
+	std::vector<double> list;
+	for (auto x : inv(m)) {
+		list.push_back(x);
+	}
+	ASSERT_EQ(v.size(), list.size());
+	for (size_t i(0); i < v.size(); ++i) {
+		EXPECT_EQ(v[i], list[i]);
+	}*/
+}
+
 #else
 	TEST(SiLi, gcc4) {
 		EXPECT_TRUE(false); // gcc4 is not supported
