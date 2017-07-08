@@ -127,13 +127,6 @@ auto sizeMismatchError(MatrixViewBase<trows1, tcols1, tstride1, toffset1, static
 	return SizeMismatchError(lhs, _op);
 }
 
-/*typename <typename ...T>
-struct ifDynamic {
-
-};*/
-
-
-
 
 /** Some helper class to force look up at instanciation time
  */
