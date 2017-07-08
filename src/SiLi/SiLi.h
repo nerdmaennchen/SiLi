@@ -1502,8 +1502,8 @@ auto svd(MatrixView<rows, cols, Props, T const> const& _view) -> SVD<rows, cols,
 			T z = S(k);
 			T g = rv1(k-1);
 			T h = rv1(k);
-			T f = ((y-z)*(y+z)+(g-h)*(g+h))/(2.0*h*y);
-			g = pythag(f,1.0);
+			T f = ((y-z)*(y+z)+(g-h)*(g+h))/(T(2.0)*h*y);
+			g = pythag(f, T(1.0));
 			f = ((x-z)*(x+z)+h*((y/(f+signCopy(g,f)))-h))/x;
 			T c = 1.;
 			T s = 1.; /* Next QR transformation: */
