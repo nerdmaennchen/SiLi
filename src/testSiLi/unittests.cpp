@@ -39,6 +39,23 @@ TEST(SiLi, init1) {
 	EXPECT_EQ(1, m3.num_rows());
 	EXPECT_EQ(10, m3.num_cols());
 }
+TEST(SiLi, init_dyn) {
+	SiLi::Matrix<-1, -1, double> m;
+	m = SiLi::make_mat<3, 2, double>({{11., 12.},
+	                         {21., 22.},
+	                         {31., 32.}});
+	EXPECT_EQ(m(0, 0), 11.);
+	EXPECT_EQ(m(0, 1), 12.);
+
+	EXPECT_EQ(m(1, 0), 21.);
+	EXPECT_EQ(m(1, 1), 22.);
+
+	EXPECT_EQ(m(2, 0), 31.);
+	EXPECT_EQ(m(2, 1), 32.);
+
+
+}
+
 
 TEST(SiLi, matrixView_access) {
 	M<2, 2>  m({{11, 12}, {21, 22}});
@@ -165,6 +182,7 @@ TEST(SiLi, matrixView_view) {
 	EXPECT_EQ(33,  view3(1, 0));
 }
 
+
 TEST(SiLi, matrixView_iterator0) {
 	std::vector<double> v;
 	M<3, 3>  m({{11, 12, 13},
@@ -282,6 +300,13 @@ TEST(SiLi, matrixView_det44_dyn) {
 	EXPECT_NEAR(m.det(), 2248., 1e-9);
 }
 
+TEST(SiLi, matrixView_det44_dyn_2) {
+	auto m = SiLi::make_mat<double>({{1., 2., 3., 10.}, {2., 3., 4., 20.}, {4., -1., 10., 50.}, {10., -11., 12., -13.}});
+
+	EXPECT_NEAR(m.det(), 2248., 1e-9);
+}
+
+
 
 
 
@@ -340,9 +365,8 @@ TEST(SiLi, matrixView_inv44_dyn) {
 	}
 }
 
-TEST(SiLi, matrixView_pinv44_dyn) {
-	SiLi::Matrix<-1, -1, double> m;
-	m = SiLi::make_mat<4, 4, double>({{1., 2., 3., 4.},
+TEST(SiLi, matrixView_pinv44) {
+	auto m = SiLi::make_mat<4, 4, double>({{1., 2., 3., 4.},
 	                         {6., 6., 7., 8.},
 	                         {9., 10., 10., 12.},
 	                         {13., 14., 15., 15.}});
@@ -360,6 +384,97 @@ TEST(SiLi, matrixView_pinv44_dyn) {
 	}
 }
 
+
+TEST(SiLi, matrixView_pinv44_dyn) {
+	auto m = SiLi::make_mat<double>({{1., 2., 3., 4.},
+	                         {6., 6., 7., 8.},
+	                         {9., 10., 10., 12.},
+	                         {13., 14., 15., 15.}});
+
+
+	std::vector<double> v {-13./19, 17./19, -2./19, -4./19, 7./38, -53./38, 23./38, 4/19.,
+	                       7./19, 4./19, -15./19, 8./19, 1./19, 6./19, 6./19, -7./19};
+	std::vector<double> list;
+	for (auto x : m.pinv()) {
+		list.push_back(x);
+	}
+	ASSERT_EQ(v.size(), list.size());
+	for (size_t i(0); i < v.size(); ++i) {
+		EXPECT_NEAR(v[i], list[i], 1e-9);
+	}
+}
+
+TEST(SiLi, matrixView_fast_inv33) {
+	auto m = SiLi::make_mat<3, 3, double>({{1., 0., 0.},
+	                         {0., 1., 0.},
+	                         {0., 0., 1.}});
+
+	std::vector<double> v {1, 0, 0, 0, 1, 0, 0, 0, 1};
+	std::vector<double> list;
+	for (auto x : fastInv(m)) {
+		list.push_back(x);
+	}
+	ASSERT_EQ(v.size(), list.size());
+	for (size_t i(0); i < v.size(); ++i) {
+		EXPECT_EQ(v[i], list[i]);
+	}
+}
+
+TEST(SiLi, matrixView_fast_inv44) {
+	auto m = SiLi::make_mat<4, 4, double>({{1., 2., 3., 4.},
+	                         {6., 6., 7., 8.},
+	                         {9., 10., 10., 12.},
+	                         {13., 14., 15., 15.}});
+
+
+	std::vector<double> v {-13./19, 17./19, -2./19, -4./19, 7./38, -53./38, 23./38, 4/19.,
+	                       7./19, 4./19, -15./19, 8./19, 1./19, 6./19, 6./19, -7./19};
+	std::vector<double> list;
+	for (auto x : fastInv(m)) {
+		list.push_back(x);
+	}
+	ASSERT_EQ(v.size(), list.size());
+	for (size_t i(0); i < v.size(); ++i) {
+		EXPECT_NEAR(v[i], list[i], 1e-9);
+	}
+}
+
+TEST(SiLi, matrixView_fast_inv33_dyn) {
+	auto m = SiLi::make_mat<double>({{1., 0., 0.},
+	                         {0., 1., 0.},
+	                         {0., 0., 1.}});
+
+	std::vector<double> v {1, 0, 0, 0, 1, 0, 0, 0, 1};
+	std::vector<double> list;
+	for (auto x : fastInv(m)) {
+		list.push_back(x);
+	}
+	ASSERT_EQ(v.size(), list.size());
+	for (size_t i(0); i < v.size(); ++i) {
+		EXPECT_EQ(v[i], list[i]);
+	}
+}
+
+TEST(SiLi, matrixView_fast_inv44_dyn) {
+	auto m = SiLi::make_mat<double>({{1., 2., 3., 4.},
+	                         {6., 6., 7., 8.},
+	                         {9., 10., 10., 12.},
+	                         {13., 14., 15., 15.}});
+
+
+	std::vector<double> v {-13./19, 17./19, -2./19, -4./19, 7./38, -53./38, 23./38, 4/19.,
+	                       7./19, 4./19, -15./19, 8./19, 1./19, 6./19, 6./19, -7./19};
+	std::vector<double> list;
+	for (auto x : fastInv(m)) {
+		list.push_back(x);
+	}
+	ASSERT_EQ(v.size(), list.size());
+	for (size_t i(0); i < v.size(); ++i) {
+		EXPECT_NEAR(v[i], list[i], 1e-9);
+	}
+}
+
+
 TEST(SiLi, matrixView_svd2x2) {
 	auto m = SiLi::make_mat<2, 2, double>({{1., 2.}, {2., 3.}});
 
@@ -374,6 +489,23 @@ TEST(SiLi, matrixView_svd2x2) {
 	EXPECT_NEAR(m(0, 1), re(0, 1), 1e-9);
 	EXPECT_NEAR(m(1, 1), re(1, 1), 1e-9);
 }
+
+TEST(SiLi, matrixView_svd2x2_dyn) {
+	auto m = SiLi::make_mat<double>({{1., 2.}, {2., 3.}});
+
+	auto svd = m.svd();
+	auto S = make_diag(svd.S);
+
+
+	auto re = svd.U * S * svd.V.t_view();
+	EXPECT_NEAR(std::abs(svd.U.det()), 1., 1e-9);
+	EXPECT_NEAR(std::abs(svd.V.det()), 1., 1e-9);
+	EXPECT_NEAR(m(0, 0), re(0, 0), 1e-9);
+	EXPECT_NEAR(m(1, 0), re(1, 0), 1e-9);
+	EXPECT_NEAR(m(0, 1), re(0, 1), 1e-9);
+	EXPECT_NEAR(m(1, 1), re(1, 1), 1e-9);
+}
+
 
 TEST(SiLi, matrixView_svd3x3) {
 	auto m = SiLi::make_mat<3, 3, double>({{1., 2., 3.}, {2., 3., 4.}, {4., 1., 10.}});
@@ -531,10 +663,76 @@ TEST(SiLi, svd_random_online) {
 		auto re = svd.U * S * svd.V.t_view();
 		auto diff = m - re;;
 		EXPECT_NEAR(0., diff.norm(), 1e-9);
+		//!TODO
 /*		auto Udet = svd.U.view<4, 4>(0, 0).det();
 		EXPECT_NEAR(1., std::abs(Udet), 1e-9);*/
 		EXPECT_NEAR(1., std::abs(svd.V.det()), 1e-9);
 	}
+}
+
+
+TEST(SiLi, matrixView_pow1) {
+	auto m = SiLi::make_mat<3, 3, double>({{1., 0., 0.},
+	                         {0., 1., 0.},
+	                         {0., 0., 1.}});
+
+	std::vector<double> v {1, 0, 0, 0, 1, 0, 0, 0, 1};
+	std::vector<double> list;
+	for (auto x : (m^1.5)) {
+		list.push_back(x);
+	}
+	ASSERT_EQ(v.size(), list.size());
+	for (size_t i(0); i < v.size(); ++i) {
+		EXPECT_EQ(v[i], list[i]);
+	}
+}
+
+TEST(SiLi, matrixView_pow2) {
+	auto m = SiLi::make_mat<3, 3, double>({{1., 0., 0.},
+	                         {0., 4., 0.},
+	                         {0., 0., 1.}});
+
+	std::vector<double> v {1, 0, 0, 0, 2, 0, 0, 0, 1};
+	std::vector<double> list;
+	for (auto x : (m^0.5)) {
+		list.push_back(x);
+	}
+	ASSERT_EQ(v.size(), list.size());
+	for (size_t i(0); i < v.size(); ++i) {
+		EXPECT_EQ(v[i], list[i]);
+	}
+}
+
+TEST(SiLi, matrixView_pow3) {
+	auto m = SiLi::make_mat<3, 3, double>({{1., 0., 0.},
+	                         {0., 4., 0.},
+	                         {0., 0., 1.}});
+
+	std::vector<double> v {1, 0, 0, 0, 0.25, 0, 0, 0, 1};
+	std::vector<double> list;
+	for (auto x : (m^(-1.))) {
+		list.push_back(x);
+	}
+	ASSERT_EQ(v.size(), list.size());
+	for (size_t i(0); i < v.size(); ++i) {
+		EXPECT_EQ(v[i], list[i]);
+	}
+}
+
+TEST(SiLi, matrixView_rank1) {
+	auto m = SiLi::make_mat<3, 3, double>({{1., 0., 0.},
+	                         {0., 4., 0.},
+	                         {0., 0., 1.}});
+
+	EXPECT_EQ(m.rank(), 3);
+}
+
+TEST(SiLi, matrixView_rank2) {
+	auto m = SiLi::make_mat<3, 3, double>({{1., 0., 0.},
+	                         {0., 4., 0.},
+	                         {0., 0., 0.}});
+
+	EXPECT_EQ(m.rank(), 2);
 }
 
 
