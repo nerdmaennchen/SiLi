@@ -1825,7 +1825,9 @@ auto isfinite(MatrixView<trows, tcols, props, T const> const& _view) -> bool {
  */
 template<int rows, int cols, typename Prop, typename T>
 std::ostream& operator<< (std::ostream& stream, SiLi::MatrixView<rows, cols, Prop, T const> const& view) {
-	stream << "{\n";
+	if (rows != 1) {
+		stream << "{\n";
+	}
 	for (int i(0); i < view.num_rows(); ++i) {
 		stream << "{ ";
 		for (int j(0); j < view.num_cols(); ++j) {
@@ -1839,7 +1841,9 @@ std::ostream& operator<< (std::ostream& stream, SiLi::MatrixView<rows, cols, Pro
 			stream << ",\n";
 		}
 	}
-	stream << "}";
+	if (rows != 1) {
+		stream << "}";
+	}
 	return stream;
 }
 
