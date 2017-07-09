@@ -553,6 +553,26 @@ public:
 		return prod(*this);
 	}
 
+	// compute tanh
+	auto tanh() const -> T {
+		Matrix<trows, tcols, T> ret = *this;
+		using std::tanh;
+		for (auto& e : ret) {
+			e = tanh(e);
+		}
+		return ret;
+	}
+
+	// compute atanh
+	auto atanh() const -> Matrix<trows, tcols, T> {
+		Matrix<trows, tcols, T> ret = *this;
+		using std::atanh;
+		for (auto& e : ret) {
+			e = atanh(e);
+		}
+		return ret;
+	}
+
 	auto isfinite() const -> bool {
 		using std::isfinite;
 		for (auto const& d : (*this)) {
