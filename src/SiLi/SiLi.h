@@ -858,10 +858,15 @@ public:
 
 template<int rows, int cols, typename T>
 class Matrix<rows, cols, T> : public MatrixView<rows, cols, class Properties<false, cols>, T> {
-	T vals[rows][cols];
+	std::array<std::array<T, cols>, rows> vals;
 public:
 	using View  = MatrixView<rows, cols, Properties<false, cols>, T>;
 	using CView = MatrixView<rows, cols, Properties<false, cols>, T const>;
+
+	template <typename Node>
+	void serialize(Node& node) {
+		node["values"] % vals;
+	}
 
 
 	Matrix() : View(&(vals[0][0])) {}
@@ -945,6 +950,21 @@ public:
 	using View  = MatrixView<-1, -1, Properties<true, -1>, T>;
 	using CView = MatrixView<-1, -1, Properties<true, -1>, T const>;
 
+	template <typename Node>
+	void serialize(Node& node) {
+		auto rows   = this->mRows;
+		auto cols   = this->mCols;
+		auto stride = this->mStride;
+		node["rows"]   % rows;
+		node["cols"]   % cols;
+		node["stride"] % stride;
+
+		if (rows != this->mRows or cols != this->mCols or stride != this->mStride) {
+			resize(rows, cols, stride);
+		}
+
+		node["values"] % vals;
+	}
 
 	Matrix(int rows, int cols) : View(vals.data()) {
 		resize(rows, cols, cols);
