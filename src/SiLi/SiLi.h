@@ -1861,12 +1861,14 @@ auto toVec(MatrixView<rows, cols, P, T const> const& _in) -> Matrix<rows*cols, 1
 	return ret;
 }
 template <int rows, int cols, typename P, typename T>
-void toMat(MatrixView<rows*cols, 1, P, T const> const& _in, Matrix<rows, cols, T>& _ret) {
+auto toMat(MatrixView<rows*cols, 1, P, T const> const& _in) -> Matrix<rows, cols, T> {
+	Matrix<rows, cols, T> ret;
 	int i(0);
-	for (auto& e : _ret) {
+	for (auto& e : ret) {
 		e = _in(i);
 		++i;
 	}
+	return ret;
 }
 
 
