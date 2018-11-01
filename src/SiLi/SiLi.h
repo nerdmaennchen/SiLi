@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <algorithm>
 #include <array>
 #include <complex>
@@ -607,15 +608,11 @@ public:
 	using CView::operator();
 
 	// value element access
-	template<bool t = prop::transposed, typename std::enable_if<not t>::type* = nullptr>
 	auto operator()(int row, int col) -> T& {
+		if constexpr (prop::transposed) {
+			std::swap(row, col);
+		}
 		return *(basePtr + (row * stride()) + col + row * offset());
-	}
-
-	// value element access
-	template<bool t = prop::transposed, typename std::enable_if<t>::type* = nullptr>
-	auto operator()(int row, int col) -> T& {
-		return operator()<false>(col, row);
 	}
 
 	// access if matrix is one dimensional
@@ -1533,7 +1530,7 @@ template <int rows, int cols, typename T, bool dynamic=(rows==-1) or (cols==-1)>
 auto sortSVD(int _rows, int _cols, SVD<rows, cols, T> const& _svd) -> SVD<rows, cols, T> {
 	// sort by singular values
 	// slow sorting
-	DynList<std::pair<T, int>, rows> columns(_rows);
+	DynList<std::pair<T, int>, cols> columns(_cols);
 	for (int i(0); i < _cols; ++i) {
 		columns[i] = std::make_pair(_svd.S(i), i);
 	}
@@ -1542,6 +1539,11 @@ auto sortSVD(int _rows, int _cols, SVD<rows, cols, T> const& _svd) -> SVD<rows, 
 	});
 
 	SiLi::SVD<rows, cols, T> sorted(_rows, _cols);
+	assert(_cols == sorted.U.num_cols());
+	assert(_cols == sorted.V.num_cols());
+	assert(_cols == sorted.S.num_rows());
+	assert(_cols == columns.size());
+
 	for (int i(0); i < _cols; ++i) {
 		auto oldI = columns[i].second;
 		sorted.U.view_col(i) = _svd.U.view_col(oldI);
