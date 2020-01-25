@@ -1,9 +1,6 @@
 #include <SiLi/SiLi.h>
 
-#define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
 #include <catch2/catch.hpp>
-#include <iostream>
-
 
 using namespace SiLi;
 template <int rows, int cols>
@@ -617,7 +614,6 @@ TEST_CASE("svd_random","") {
 
 TEST_CASE("svd_random_online_sqr","") {
 	for (int i(0); i<1000; ++i) {
-		try {
 		auto v = []() { return (double(rand())/RAND_MAX) * 20. - 10.; };
 		auto m = SiLi::make_mat<4, 4, double>({
 				 {v(), v(), v(), v()},
@@ -635,12 +631,6 @@ TEST_CASE("svd_random_online_sqr","") {
 		auto Udet = svd.U.view<4, 4>(0, 0).det();
 		CHECK(1. == Approx(std::abs(Udet)).margin(1e-9));
 		CHECK(1. == Approx(std::abs(svd.V.det())).margin(1e-9));
-		} catch (std::runtime_error const&e ){
-			std::cerr << e.what() << std::endl;
-			throw;
-		} catch(SiLi::MaxIteration e) {
-			std::cout << "max iterations reached" << std::endl;
-		}
 	}
 }
 
