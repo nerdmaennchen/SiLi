@@ -3,38 +3,96 @@
 #include <catch2/catch.hpp>
 
 using namespace SiLi;
+
 template <int rows, int cols>
 using M = Matrix<rows, cols>;
 
-TEST_CASE("testing init0","") {
-	M< 0, 0>  m1(0);
-	M<10, 0>  m2(0);
-	M< 0, 10> m3(0);
+TEST_CASE("testing init 0x0, 0xn, nx0", "[init]") {
+	static constexpr auto m1 = Matrix< 0,  0, double>(0);
+	static constexpr auto m2 = Matrix<10,  0, double>(0);
+	static constexpr auto m3 = Matrix< 0, 10, double>(0);
 
-	CHECK(0 == m1.num_rows());
-	CHECK(0 == m1.num_cols());
+	static_assert(0 == m1.num_rows());
+	static_assert(0 == m1.num_cols());
+	static_assert(std::is_same_v<decltype(m1)::value_t, double>);
 
-	CHECK(10 == m2.num_rows());
-	CHECK(0 == m2.num_cols());
+	static_assert(10 == m2.num_rows());
+	static_assert( 0 == m2.num_cols());
 
-	CHECK(0 == m3.num_rows());
-	CHECK(10 == m3.num_cols());
+	static_assert( 0 == m3.num_rows());
+	static_assert(10 == m3.num_cols());
 }
 
-TEST_CASE("testing init1","") {
-	M< 1, 1>  m1(0);
-	M<10, 1>  m2(0);
-	M< 1, 10> m3(0);
+TEST_CASE("testing init 1x1, 1xn, nx1","[init]") {
+	static constexpr auto m1 = Matrix< 1,  1>(0);
+	static constexpr auto m2 = Matrix<10,  1>(0);
+	static constexpr auto m3 = Matrix< 1, 10>(0);
 
-	CHECK(1 == m1.num_rows());
-	CHECK(1 == m1.num_cols());
+	static_assert(1 == m1.num_rows());
+	static_assert(1 == m1.num_cols());
+	static_assert(0 == m1(0, 0));
 
-	CHECK(10 == m2.num_rows());
-	CHECK(1 == m2.num_cols());
 
-	CHECK(1 == m3.num_rows());
-	CHECK(10 == m3.num_cols());
+	static_assert(10 == m2.num_rows());
+	static_assert( 1 == m2.num_cols());
+	static_assert(0 == m2(0, 0));
+	static_assert(0 == m2(1, 0));
+	static_assert(0 == m2(2, 0));
+	static_assert(0 == m2(3, 0));
+	static_assert(0 == m2(4, 0));
+	static_assert(0 == m2(5, 0));
+	static_assert(0 == m2(6, 0));
+	static_assert(0 == m2(7, 0));
+	static_assert(0 == m2(8, 0));
+	static_assert(0 == m2(9, 0));
+
+
+	static_assert( 1 == m3.num_rows());
+	static_assert(10 == m3.num_cols());
+	static_assert(0 == m3(0, 0));
+	static_assert(0 == m3(0, 1));
+	static_assert(0 == m3(0, 2));
+	static_assert(0 == m3(0, 3));
+	static_assert(0 == m3(0, 4));
+	static_assert(0 == m3(0, 5));
+	static_assert(0 == m3(0, 6));
+	static_assert(0 == m3(0, 7));
+	static_assert(0 == m3(0, 8));
+	static_assert(0 == m3(0, 9));
 }
+TEST_CASE("testing init 2x2, 2xn, nx2","[init]") {
+	static constexpr auto m1 = Matrix< 2, 2>(0);
+	static constexpr auto m2 = Matrix< 3, 2>(0);
+	static constexpr auto m3 = Matrix< 2, 3>(0);
+
+	static_assert(2 == m1.num_rows());
+	static_assert(2 == m1.num_cols());
+	static_assert(0 == m1(0, 0));
+	static_assert(0 == m1(1, 0));
+	static_assert(0 == m1(0, 1));
+	static_assert(0 == m1(1, 1));
+
+
+	static_assert(3 == m2.num_rows());
+	static_assert(2 == m2.num_cols());
+	static_assert(0 == m2(0, 0));
+	static_assert(0 == m2(1, 0));
+	static_assert(0 == m2(2, 0));
+	static_assert(0 == m2(0, 1));
+	static_assert(0 == m2(1, 1));
+	static_assert(0 == m2(2, 1));
+
+
+	static_assert(2 == m3.num_rows());
+	static_assert(3 == m3.num_cols());
+	static_assert(0 == m3(0, 0));
+	static_assert(0 == m3(0, 1));
+	static_assert(0 == m3(0, 2));
+	static_assert(0 == m3(1, 0));
+	static_assert(0 == m3(1, 1));
+	static_assert(0 == m3(1, 2));
+}
+
 
 TEST_CASE("dynamic initialization","") {
 	SiLi::Matrix<-1, -1, double> m;
@@ -263,6 +321,7 @@ TEST_CASE("matrixView_make_vec","") {
 TEST_CASE("matrixView_det11","") {
 	auto m = SiLi::Matrix<1, 1, double>({{11.}});
 	CHECK(m.det() == 11.);
+	CHECK(det(m) == 11.);
 }
 
 TEST_CASE("matrixView_det22","") {

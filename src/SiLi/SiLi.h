@@ -133,10 +133,6 @@ auto sizeMismatchError(MatrixViewBase<trows1, tcols1, tstride1, toffset1, static
 
 /** Some helper class to force look up at instanciation time
  */
-template <int T>
-struct Number {
-	static constexpr int _number {T};
-};
 
 /** SVD Results;
  */
@@ -264,17 +260,19 @@ public:
 	using Props = prop;
 
 private:
-	using TMatrix = Matrix<trows, tcols, T>;
 	using Base    = MatrixViewBase<trows, tcols, prop::rowStride, prop::offset>;
 
 protected:
 	T const* cBasePtr;
 
-	void changeBase(T const* base) { cBasePtr = base; }
+	void changeBase(T const* base) requires (prop::dynamic) {
+		cBasePtr = base;
+	}
+
+	template<int, int, typename...> friend class MatrixView;
+	constexpr explicit MatrixView(T const* base) : cBasePtr(base) {}
 
 public:
-	explicit MatrixView(T const* base) : cBasePtr(base) {}
-
 	MatrixView(MatrixView const& rhs) : cBasePtr(rhs.cBasePtr) {}
 	MatrixView(MatrixView&& rhs)      : cBasePtr(rhs.cBasePtr) {}
 
@@ -285,36 +283,31 @@ public:
 	using Base::stride;
 
 	// read only element access not transposed
-	template<bool t = prop::transposed, typename std::enable_if<not t>::type* = nullptr>
-	auto operator()(int row, int col) const -> T const& {
+	constexpr auto operator()(int row, int col) const -> T const& requires (not prop::transposed) {
 		return *(cBasePtr + (row * stride()) + col + offset()*row);
 	}
 
 	// read only element access transposed
-	template<bool t = prop::transposed, typename std::enable_if<t>::type* = nullptr>
-	auto operator()(int row, int col) const -> T const& {
-		return operator()<false>(col, row);
+	constexpr auto operator()(int row, int col) const -> T const& requires (prop::transposed) {
+		return *(cBasePtr + (col * stride()) + row + offset()*col);
 	}
 
-	// read only element access not transposed
-	template<int _rows = Number<trows>::_number, typename std::enable_if<_rows == 1 and tcols != 1>::type* = nullptr>
-	auto operator()(int col) const -> T const& {
+	// view is a vector, read element
+	constexpr auto operator()(int col) const -> T const& requires (trows == 1 and tcols != 1){
 		return operator()(0, col);
 	}
 
-	// read only element access not transposed
-	template<int _cols = Number<tcols>::_number, typename std::enable_if<_cols == 1>::type* = nullptr>
-	auto operator()(int row) const -> T const& {
+	// view is a vector, read element
+	constexpr auto operator()(int row) const -> T const& requires (tcols == 1){
 		return operator()(row, 0);
 	}
 
-	template<int _cols = tcols, typename std::enable_if<trows == _cols and trows == 1>::type* = nullptr>
-	operator T() const {
+	// access as scalar if only single value
+	operator T() const requires(trows == 1 and tcols == 1){
 		return (*this)(0, 0);
 	};
 
-	template<int _cols = tcols, typename std::enable_if<trows == _cols and trows < 0>::type* = nullptr>
-	explicit operator T() const {
+	explicit operator T() const requires((trows < 0 and tcols < 0) or (trows < 0 and tcols == 1) or (trows == 1 and tcols < 0)) {
 		if (this->num_rows() != 1 or this->num_cols() != 1) {
 			throw SizeMismatchError(*this, *this, "operator T");
 		}
@@ -594,13 +587,18 @@ private:
 protected:
 	T* basePtr;
 
+	void changeBase(T* base) requires (prop::dynamic) {
+		CView::changeBase(base);
+		basePtr = base;
+	}
 public:
-	explicit MatrixView(T* base) : CView(base), basePtr(base) {}
+	constexpr explicit MatrixView(T* base) : CView(base), basePtr(base) {}
 
 	MatrixView(MatrixView& rhs) : CView(rhs), basePtr(rhs.basePtr) {}
 	MatrixView(MatrixView&& rhs) : CView(rhs), basePtr(rhs.basePtr) {}
 
-	void changeBase(T* base) { CView::changeBase(base); basePtr = base; }
+protected:
+public:
 
 	// pass through
 	using CView::stride;
@@ -608,7 +606,7 @@ public:
 	using CView::operator();
 
 	// value element access
-	auto operator()(int row, int col) -> T& {
+	constexpr auto operator()(int row, int col) -> T& {
 		if constexpr (prop::transposed) {
 			std::swap(row, col);
 		}
@@ -616,14 +614,12 @@ public:
 	}
 
 	// access if matrix is one dimensional
-	template<int _rows = Number<trows>::_number, typename std::enable_if<_rows == 1 and tcols != 1>::type* = nullptr>
-	auto operator()(int col) -> T& {
+	constexpr auto operator()(int col) -> T& requires(trows == 1 and tcols != 1) {
 		return operator()(0, col);
 	}
 
 	// access if matrix is one dimensional
-	template<int _cols = Number<tcols>::_number, typename std::enable_if<_cols == 1>::type* = nullptr>
-	auto operator()(int row) -> T& {
+	constexpr auto operator()(int row) -> T& requires(tcols == 1) {
 		return operator()(row, 0);
 	}
 
@@ -776,7 +772,7 @@ public:
 	}
 
 
-	auto operator=(T const& rhs) -> MatrixView& {
+	constexpr auto operator=(T const& rhs) -> MatrixView& {
 		for (int r(0); r < this->num_rows(); ++r) {
 			for (int c(0); c < this->num_cols(); ++c) {
 				(*this)(r, c) = rhs;
@@ -817,13 +813,11 @@ public:
 	// transposed view
 	using CView::t_view;
 
-	template <bool dynamic = prop::dynamic, typename std::enable_if<not dynamic>::type* = nullptr>
-	auto t_view() -> MatrixView<tcols, trows, typename prop::Transposed, T> {
+	auto t_view() -> MatrixView<tcols, trows, typename prop::Transposed, T> requires (not prop::dynamic) {
 		return MatrixView<tcols, trows, typename prop::Transposed, T> {basePtr};
 	}
 
-	template <bool dynamic = prop::dynamic, typename std::enable_if<dynamic>::type* = nullptr>
-	auto t_view() -> MatrixView<tcols, trows, typename prop::Transposed, T> {
+	auto t_view() -> MatrixView<tcols, trows, typename prop::Transposed, T> requires (prop::dynamic) {
 		auto view = MatrixView<tcols, trows, typename prop::Transposed, T> {basePtr};
 		view.mRows   = this->mCols;
 		view.mCols   = this->mRows;
@@ -855,33 +849,31 @@ public:
 
 template<int rows, int cols, typename T>
 class Matrix<rows, cols, T> : public MatrixView<rows, cols, class Properties<false, cols>, T> {
-	std::array<std::array<T, cols>, rows> vals;
+	std::array<T, cols*rows==0?1:cols*rows> vals;
 public:
 	using View  = MatrixView<rows, cols, Properties<false, cols>, T>;
 	using CView = MatrixView<rows, cols, Properties<false, cols>, T const>;
+	using value_t = T;
 
-	template <typename Node>
-	void serialize(Node& node) {
-		node["values"] % vals;
-	}
+	constexpr Matrix() : View(&(vals[0])) {}
 
-
-	Matrix() : View(&(vals[0][0])) {}
-
-	Matrix(int /*_rows*/, int /*_cols*/) : Matrix() {
+	Matrix(int /*_rows*/, int /*_cols*/)/* requires (rows < 0 or cols < 0)*/
+		: Matrix() {
 		// this function is needed for compatiblity of dynamic matrices
 	}
-	Matrix(int /*_rows*/, int /*_cols*/, T _initValue) : Matrix(_initValue) {
+	Matrix(int /*_rows*/, int /*_cols*/, T _initValue)/* requires (rows < 0 or cols < 0)*/
+		: Matrix(_initValue) {
 		// this function is needed for compatiblity of dynamic matrices
 	}
 
 
-	explicit Matrix(T initVal) : View(&(vals[0][0]))  {
-		((View*)(this))->operator=(initVal);
-	}
+	constexpr explicit Matrix(T initVal)
+		: View(&(vals[0]))
+		, vals{initVal}
+	{}
 
 	template<typename T2>
-	Matrix(T2 const (&list)[rows*cols]) : View(&(vals[0][0])) {
+	Matrix(T2 const (&list)[rows*cols]) : View(&(vals[0])) {
 		T2 const* iter = &(list[0]);
 		for (int r(0); r < rows; ++r) {
 			for (int c(0); c < cols; ++c) {
@@ -890,21 +882,21 @@ public:
 		}
 	}
 
-	Matrix(T const (&list)[rows][cols]) : View(&(vals[0][0])) {
-		memcpy(&(vals[0][0]), &(list[0][0]), rows*cols*sizeof(T));
+	Matrix(T const (&list)[rows][cols]) : View(&(vals[0])) {
+		memcpy(&(vals[0]), &(list[0][0]), rows*cols*sizeof(T));
 	}
 
-	Matrix(Matrix&& other) : View(&(vals[0][0])) {
-		memcpy(&(vals[0][0]), &(other.vals[0][0]), rows*cols*sizeof(T));
+	Matrix(Matrix&& other) : View(&(vals[0])) {
+		memcpy(&(vals[0]), &(other.vals[0]), rows*cols*sizeof(T));
 	}
 
 
-	Matrix(Matrix const& other) : View(&(vals[0][0])) {
-		memcpy(&(vals[0][0]), &(other.vals[0][0]), rows*cols*sizeof(T));
+	Matrix(Matrix const& other) : View(&(vals[0])) {
+		memcpy(&(vals[0]), &(other.vals[0]), rows*cols*sizeof(T));
 	}
 
 	template<typename Props>
-	Matrix(MatrixView<rows, cols, Props, T const> const& other) : View(&(vals[0][0])) {
+	Matrix(MatrixView<rows, cols, Props, T const> const& other) : View(&(vals[0])) {
 		for (int r(0); r < this->num_rows(); ++r) {
 			for (int c(0); c < this->num_cols(); ++c) {
 				(*this)(r, c) = other(r, c);
@@ -917,7 +909,7 @@ public:
 	auto operator=(MatrixView<rows, cols, Props, T const> const& other) && -> Matrix& = delete;
 
 	auto operator=(Matrix const& other) -> Matrix& {
-		memcpy(&vals[0][0], &other.vals[0][0], rows*cols*sizeof(T));
+		memcpy(&vals[0], &other.vals[0], rows*cols*sizeof(T));
 		return *this;
 	}
 };
@@ -946,22 +938,6 @@ protected:
 public:
 	using View  = MatrixView<-1, -1, Properties<true, -1>, T>;
 	using CView = MatrixView<-1, -1, Properties<true, -1>, T const>;
-
-	template <typename Node>
-	void serialize(Node& node) {
-		auto rows   = this->mRows;
-		auto cols   = this->mCols;
-		auto stride = this->mStride;
-		node["rows"]   % rows;
-		node["cols"]   % cols;
-		node["stride"] % stride;
-
-		if (rows != this->mRows or cols != this->mCols or stride != this->mStride) {
-			resize(rows, cols, stride);
-		}
-
-		node["values"] % vals;
-	}
 
 	Matrix(int rows, int cols) : View(vals.data()) {
 		resize(rows, cols, cols);
@@ -1042,14 +1018,12 @@ public:
 	using Matrix<-1, -1, T>::operator();
 
 	// read only element access
-	template<int _rows = Number<trows>::_number, typename std::enable_if<_rows == 1>::type* = nullptr>
-	auto operator()(int col) const -> T const& {
+	auto operator()(int col) const -> T const& requires (trows == 1) {
 		return operator()(0, col);
 	}
 
 	// element access
-	template<int _rows = Number<trows>::_number, typename std::enable_if<_rows == 1>::type* = nullptr>
-	auto operator()(int col) -> T& {
+	auto operator()(int col) -> T& requires (trows == 1) {
 		return operator()(0, col);
 	}
 
@@ -1064,14 +1038,12 @@ public:
 	using Matrix<-1, -1, T>::operator();
 
 	// read only element access
-	template<int _cols = Number<tcols>::_number, typename std::enable_if<_cols == 1>::type* = nullptr>
-	auto operator()(int row) const -> T const& {
+	auto operator()(int row) const -> T const& requires(tcols == 1) {
 		return operator()(row, 0);
 	}
 
 	// element access
-	template<int _cols = Number<tcols>::_number, typename std::enable_if<_cols == 1>::type* = nullptr>
-	auto operator()(int row) -> T& {
+	auto operator()(int row) -> T& requires (tcols == 1) {
 		return operator()(row, 0);
 	}
 
