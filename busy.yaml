@@ -1,1 +1,6 @@
 name: SiLi
+projects:
+  - name: benchmarkSiLi
+    type: executable
+    legacy:
+      systemLibraries: [armadillo]
