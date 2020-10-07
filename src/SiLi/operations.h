@@ -1,62 +1,38 @@
 #pragma once
 
 #include "concepts.h"
+
 #include <cmath>
 #include <optional>
 
-namespace SiLi2 {
+namespace SiLi {
 
-// !TODO for_constexpr, is there a standard solution?
-template <auto Iter, auto End, typename L>
-constexpr void for_constexpr(L lambda) {
-	if constexpr(Iter != End) {
-		using R = decltype(lambda.template operator()<Iter>());
-		if constexpr (std::is_same_v<bool, R>) {
-			auto r = lambda.template operator()<Iter>();
-			if (r) {
-				for_constexpr<Iter+1, End>(lambda);
-			}
-		} else {
-			lambda.template operator()<Iter>();
-			for_constexpr<Iter+1, End>(lambda);
-		}
-	}
-}
-
-// !TODO for_each_constexpr, is there a standard solution?
-template <Viewable V, typename L>
-constexpr auto for_each(L const& lambda) {
-	for_constexpr<0, V::Rows>([&]<auto row>() {
-		for_constexpr<0, V::Cols>([&]<auto col>() {
-			lambda.template operator()<row, col>();
-		});
-	});
-}
+template <typename T>
+constexpr auto value() -> std::add_rvalue_reference<value_t<T>>::type;
 
 template <Viewable L, Viewable R> requires (L::Rows == R::Rows and L::Cols == R::Cols)
 constexpr auto operator+(L const& l, R const& r) {
-	using U = decltype(std::declval<typename L::value_t>() + std::declval<typename R::value_t>());
+	using U = decltype(value<L>() + value_t<R>());
 	auto ret = Matrix<L::Rows, L::Cols, U>{};
-	for_each<L>([&]<auto row, auto col>() {
+	for_each_constexpr<L>([&]<auto row, auto col>() {
 		ret(row, col) = l(row, col) + r(row, col);
 	});
 	return ret;
 }
 
 template <Viewable L, Viewable R> requires (L::Rows == R::Rows and L::Cols == R::Cols)
-constexpr auto operator+=(L& l, R const& r) {
-	static_assert(not std::is_const_v<L>, "first parameter of operator += must be a non-const object");
-	for_each<L>([&]<auto row, auto col>() {
+constexpr auto operator+=(L& l, R const& r) -> auto& {
+	for_each_constexpr<L>([&]<auto row, auto col>() {
 		l(row, col) += r(row, col);
 	});
 	return l;
 }
 
-template <Viewable L>
-constexpr auto operator-(L const& l) {
-	using U = decltype(-std::declval<typename L::value_t>());
-	auto ret = Matrix<L::Rows, L::Cols, U>{};
-	for_each<L>([&]<auto row, auto col>() {
+template <Viewable V>
+constexpr auto operator-(V const& l) {
+	using U = decltype(-value<V>());
+	auto ret = Matrix<V::Rows, V::Cols, U>{};
+	for_each_constexpr<V>([&]<auto row, auto col>() {
 		ret(row, col) = -l(row, col);
 	});
 	return ret;
@@ -66,17 +42,15 @@ template <Viewable L, Viewable R> requires (L::Rows == R::Rows and L::Cols == R:
 constexpr auto operator-(L const& l, R const& r) {
 	using U = decltype(std::declval<typename L::value_t>() - std::declval<typename R::value_t>());
 	auto ret = Matrix<L::Rows, L::Cols, U>{};
-	for_each<L>([&]<auto row, auto col>() {
+	for_each_constexpr<L>([&]<auto row, auto col>() {
 		ret(row, col) = l(row, col) - r(row, col);
 	});
 	return ret;
 }
 
 template <Viewable L, Viewable R> requires (L::Rows == R::Rows and L::Cols == R::Cols)
-constexpr auto operator-=(L& l, R const& r) {
-	static_assert(not std::is_const_v<L>, "first parameter of operator -= must be a non-const object");
-
-	for_each<L>([&]<auto row, auto col>() {
+constexpr auto operator-=(L& l, R const& r) -> auto& {
+	for_each_constexpr<L>([&]<auto row, auto col>() {
 		l(row, col) -= r(row, col);
 	});
 	return l;
@@ -91,32 +65,37 @@ constexpr auto operator*(L const& l, R const& r) {
 		for_constexpr<0, L::Cols>([&]<int i>() {
 			ret += l(i) * r(i);
 		});
-		return ret;
+		return Matrix{{{ret}}};
 	} else {
 		auto ret = Matrix<L::Rows, R::Cols, U>{};
 		for_constexpr<0, L::Rows>([&]<int row>() {
 			for_constexpr<0, R::Cols>([&]<int col>() {
-				ret(row, col) = view_row<row>(l) * view_col<col>(r);
+				ret(row, col) = U{view_row<row>(l) * view_col<col>(r)};
 			});
 		});
 		return ret;
 	}
 }
 
-template <Viewable L, typename T>
-constexpr auto operator*(L const& l, T const& s) {
-	using U = decltype(std::declval<typename L::value_t>() * std::declval<T>());
-	auto ret = Matrix<L::Rows, L::Cols, U>{};
-	for_each<L>([&]<auto row, auto col>() {
+template <Viewable L>
+constexpr auto operator*(L&& l, value_t<L> const& s) {
+	using U = decltype(value<L>() * value<L>());
+	auto ret = Matrix<rows_v<L>, cols_v<L>, U>{};
+	for_each_constexpr<L>([&]<auto row, auto col>() {
 		ret(row, col) = l(row, col) * s;
 	});
 
 	return ret;
 }
+template <Viewable R>
+constexpr auto operator*(value_t<R> const& s, R&& r) {
+	return std::forward<R>(r) * s;
+}
 
-template <Viewable L, typename T>
-constexpr auto operator*=(L&& l, T const& s) -> L& {
-	for_each<L>([&]<auto row, auto col>() {
+
+template <Viewable L>
+constexpr auto operator*=(L& l, value_t<L> const& s) -> auto& {
+	for_each_constexpr<L>([&]<auto row, auto col>() {
 		l(row, col) *= s;
 	});
 	return l;
@@ -127,7 +106,7 @@ template <Viewable L, typename T>
 constexpr auto operator/(L const& l, T const& s) {
 	using U = decltype(std::declval<typename L::value_t>() * std::declval<T>());
 	auto ret = Matrix<L::Rows, L::Cols, U>{};
-	for_each<L>([&]<auto row, auto col>() {
+	for_each_constexpr<L>([&]<auto row, auto col>() {
 		ret(row, col) = l(row, col) / s;
 	});
 
@@ -136,7 +115,7 @@ constexpr auto operator/(L const& l, T const& s) {
 
 template <Viewable L, typename T>
 constexpr auto operator/=(L&& l, T const& s) -> L& {
-	for_each<L>([&]<auto row, auto col>() {
+	for_each_constexpr<L>([&]<auto row, auto col>() {
 		l(row, col) /= s;
 	});
 	return l;
@@ -168,52 +147,41 @@ constexpr auto operator!=(L const& l, R const& r) -> bool requires (L::Rows == R
 }
 
 
-// read only diagonal view
-template <Viewable L>
-constexpr auto view_diag(L& l) {
-	using T = typename L::value_t;
-	using U = std::conditional_t<std::is_const_v<L>, const T, T>;
+// diagonal view
+template <Viewable V>
+constexpr auto view_diag(V&& v) {
+	using U = value_t<V>;
 	using std::min;
-	constexpr auto length = min(L::Cols, L::Rows);
-	constexpr auto stride = L::Stride+1;
-	return MatrixView<length, 1, stride, U>{l.data()};
+	constexpr auto length = min(cols_v<V>, rows_v<V>);
+	constexpr auto stride = stride_v<V>+1;
+	return View<length, 1, stride, U, false>{v.data()};
 }
 
-template <Viewable L>
-constexpr auto diag(L& l) {
-	using U = typename L::value_t;
-	using std::min;
-	constexpr auto length = min(L::Cols, L::Rows);
-	auto mat = Matrix<length, 1, U>{};
-	for_constexpr<0, length>([&]<int row>() {
-		mat(row, 0) = l(row, row);
-	});
-	return mat;
+template <Viewable V>
+constexpr auto diag(V&& v) {
+	return Matrix{view_diag(std::forward<V>(v))};
 }
 
-template <int start_row, int start_col, int end_row, int end_col, Viewable L>
-constexpr auto view(L& l) {
-	using T = typename L::value_t;
-	using U = std::conditional_t<std::is_const_v<L>, const T, T>;
+template <int start_row, int start_col, int end_row, int end_col, Viewable V>
+constexpr auto view(V&& v) requires (end_row <= rows_v<V> and end_col <= cols_v<V>) {
+	using U = value_t<V>;
 
-	constexpr int rows = end_row - start_row;
-	constexpr int cols = end_col - start_col;
-	static_assert(rows <= L::Rows, "new View must be smaller than old view");
-	static_assert(cols <= L::Cols, "new View must be smaller than old view");
+	constexpr auto rows       = end_row - start_row;
+	constexpr auto cols       = end_col - start_col;
+	constexpr auto stride     = stride_v<V>;
+	constexpr auto transposed = transposed_v<V>;
 
-	constexpr int stride = L::Stride;
-
-	return MatrixView<rows, cols, stride, U>{l.data() + start_col + start_row * stride};
+	return View<rows, cols, stride, U, transposed>{v.data() + start_col + start_row * stride};
 }
 
 template <int _row, Viewable V>
-constexpr auto view_row(V& v) {
-	return view<_row, 0, _row+1, V::Cols>(v);
+constexpr auto view_row(V&& v) {
+	return view<_row, 0, _row+1, cols_v<V>>(std::forward<V>(v));
 }
 
 template <int _col, Viewable V>
-constexpr auto view_col(V& v) {
-	return view<0, _col, V::Rows, _col+1>(v);
+constexpr auto view_col(V&& v) {
+	return view<0, _col, rows_v<V>, _col+1>(std::forward<V>(v));
 }
 
 template <Viewable L, Viewable R>
@@ -235,18 +203,20 @@ constexpr auto join_cols(L const& l, R const& r) requires (L::Cols == R::Cols) {
 // !TODO needs unit tests
 // lu decomposition, returns L value
 template<Viewable V>
-constexpr auto luDecomposition_L(V& v) requires (V::Rows == V::Cols) {
-	constexpr auto N = V::Rows;
-	auto L = Matrix<N, N, typename V::value_t>{};
+constexpr auto luDecomposition_L(V const& v) requires (rows_v<V> == cols_v<V>) {
+	using T = std::decay_t<value_t<V>>;
+
+	constexpr auto N = rows_v<V>;
+	auto L = Matrix<N, N, T>{};
 
 	for_constexpr<0, N>([&]<auto K>() {
 		auto kRow = view_row<K>(L);
 		auto kCol = view_col<K>(L);
 		for_constexpr<K, N>([&]<auto I>() {
-			L(K, I) = v(K, I) - kRow * view_col<I>(L);
+			L(K, I) = v(K, I) - T{kRow * view_col<I>(L)};
 		});
 		for_constexpr<K+1, N>([&]<auto I>() {
-			L(I, K) = (v(I, K) - view_row<I>(L) * kCol) / L(K, K);
+			L(I, K) = (v(I, K) - T{view_row<I>(L) * kCol}) / L(K, K);
 		});
 	});
 	return L;
@@ -300,7 +270,7 @@ template <Viewable L, Viewable R> requires (L::Rows == R::Rows and L::Cols == R:
 constexpr auto element_multi(L const& l, R const& r) {
 	using U = decltype(std::declval<typename L::value_t>() * std::declval<typename R::value_t>());
 	auto ret = Matrix<L::Rows, L::Cols, U>{};
-	for_each<L>([&]<auto row, auto col>() {
+	for_each_constexpr<L>([&]<auto row, auto col>() {
 		ret(row, col) = l(row, col) * r(row, col);
 	});
 	return ret;
@@ -320,14 +290,12 @@ constexpr auto cross(L const& l, R const& r) {
 // sum of all elements
 template <Viewable V>
 constexpr auto sum(V const& v) {
-	using T = typename V::value_t;
-	auto acc = T{};
-	for_each<V>([&]<auto row, auto col>() {
+	auto acc = value_t<V>{};
+	for_each_constexpr<V>([&]<auto row, auto col>() {
 		acc += v(row, col);
 	});
 	return acc;
 }
-
 
 // inverse of 1x1
 template <Viewable V> requires (V::Rows == V::Cols and V::Rows == 1)
@@ -369,7 +337,7 @@ constexpr auto inv(V v) -> std::tuple<typename V::value_t, V> {
 	auto c = T(1) / d;
 	auto ret = V{};
 
-	for_each<V>([&]<int row, int col>() {
+	for_each_constexpr<V>([&]<int row, int col>() {
 		auto tl = v((row+1)%3, (col+1)%3);
 		auto br = v((row+2)%3, (col+2)%3);
 		auto tr = v((row+1)%3, (col+2)%3);
@@ -395,7 +363,7 @@ constexpr auto inv(V v) -> std::tuple<typename V::value_t, V> {
 			return false;
 		}
 		view_col<p>(v) /= -pivot;
-		for_each<V>([&]<int i, int j>() {
+		for_each_constexpr<V>([&]<int i, int j>() {
 			if (i == p or j == p) return;
 			v(i, j) += v(p, j) * v(i, p);
 		});
@@ -409,5 +377,16 @@ constexpr auto inv(V v) -> std::tuple<typename V::value_t, V> {
 	return {det, v};
 }
 
+// transpose view
+template <typename V>
+constexpr auto view_trans(V&& v) requires (Viewable<V>) {
+	return View<cols_v<V>, rows_v<V>, stride_v<V>, value_t<V>, not transposed_v<V>>{v.data()};
+}
+
+// transpose
+template <Viewable V>
+constexpr auto trans(V&& v) {
+	return Matrix{view_trans(v)};
+}
 
 }

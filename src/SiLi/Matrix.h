@@ -4,7 +4,7 @@
 
 #include <array>
 
-namespace SiLi2 {
+namespace SiLi {
 
 template<int _rows, int _cols, typename T> requires (_rows >= 0 and _cols >= 0)
 class Matrix<_rows, _cols, T> {
@@ -13,11 +13,17 @@ class Matrix<_rows, _cols, T> {
 public:
 	using value_t = T;
 
-	static constexpr int Rows   = _rows;
-	static constexpr int Cols   = _cols;
-	static constexpr int Stride = _cols;
+	static constexpr int  Rows       = _rows;
+	static constexpr int  Cols       = _cols;
+	static constexpr int  Stride     = _cols;
+	static constexpr bool Transposed = false;
 
 	constexpr Matrix() : vals{} {}
+
+	template <typename ...S>
+	constexpr Matrix(S... _values)
+		: vals{std::forward<S>(_values)...}
+	{}
 
 	constexpr Matrix(T const (&values)[Rows][Cols]) {
 		for (int row{0}; row < Rows; ++row) {
@@ -26,45 +32,11 @@ public:
 			}
 		}
 	}
-
-	template <Viewable L>
-	constexpr Matrix(L const& view) requires (L::Rows == Rows and L::Cols == Cols) {
-		for (int row{0}; row < Rows; ++row) {
-			for (int col{0}; col < Cols; ++col) {
-				this->operator()(row, col) = view(row, col);
-			}
-		}
+	template <Viewable V>
+	constexpr Matrix(V const& view) requires (V::Rows == Rows and V::Cols == Cols) {
+		*this = view;
 	}
 
-
-	constexpr auto operator()(int row, int col) -> T& {
-		return vals[col + row * Cols];
-	}
-	constexpr auto operator()(int row, int col) const -> T const& {
-		return vals[col + row * Cols];
-	}
-
-	constexpr auto operator()(int row) -> T& requires (Cols == 1 and Rows != 1) {
-		return vals[row * Stride];
-	}
-	constexpr auto operator()(int row) const -> T const& requires (Cols == 1 and Rows != 1) {
-		return vals[row * Stride];
-	}
-	constexpr auto operator()(int col) -> T& requires (Rows == 1) {
-		return vals[col];
-	}
-	constexpr auto operator()(int col) const -> T const& requires (Rows == 1) {
-		return vals[col];
-	}
-
-
-
-	constexpr auto view() {
-		return MatrixView<_rows, _cols, _cols, T>{vals.data()};
-	}
-	constexpr auto view() const {
-		return MatrixView<_rows, _cols, _cols, T const>{vals.data()};
-	}
 	constexpr auto data() -> T* {
 		return vals.data();
 	}
@@ -72,22 +44,56 @@ public:
 		return vals.data();
 	}
 
+
+	explicit constexpr operator T() requires (Rows == 1 and Cols == 1) {
+		return get(*this, 0, 0);
+	}
+	explicit constexpr operator T const() const requires (Rows == 1 and Cols == 1) {
+		return get(*this, 0, 0);
+	}
+
+
+	constexpr auto operator()(int row, int col) -> T& {
+		return get(*this, row, col);
+	}
+	constexpr auto operator()(int row, int col) const -> T const& {
+		return get(*this, row, col);
+	}
+
+	constexpr auto operator()(int entry) -> T& requires (Cols == 1 or Rows == 1) {
+		return get(*this, entry);
+	}
+	constexpr auto operator()(int entry) const -> T const& requires (Cols == 1 or Rows == 1) {
+		return get(*this, entry);
+	}
+	constexpr auto operator[](int entry) -> T& requires (Cols == 1 or Rows == 1) {
+		return get(*this, entry);
+	}
+	constexpr auto operator[](int entry) const -> T const& requires (Cols == 1 or Rows == 1) {
+		return get(*this, entry);
+	}
+
+
+
+	constexpr auto view() {
+		return View<_rows, _cols, _cols, T, false>{data()};
+	}
+	constexpr auto view() const {
+		return View<_rows, _cols, _cols, T const, false>{data()};
+	}
+
 	constexpr auto operator=(T const& s) -> Matrix& {
-		for (int row{0}; row < Rows; ++row) {
-			for (int col{0}; col < Cols; ++col) {
-				this->operator()(row, col) = s;
-			}
-		}
+		for_each_constexpr<Matrix>([&]<int row, int col>() {
+			this->operator()(row, col) = s;
+		});
 		return *this;
 	}
 
 	template <Viewable V>
 	constexpr auto operator=(V const& v) -> Matrix& requires (Rows == V::Rows and Cols == V::Cols) {
-		for (int row{0}; row < Rows; ++row) {
-			for (int col{0}; col < Cols; ++col) {
-				this->operator()(row, col) = v(row, col);
-			}
-		}
+		for_each_constexpr<Matrix>([&]<int row, int col>() {
+			this->operator()(row, col) = v(row, col);
+		});
 		return *this;
 	}
 
@@ -96,8 +102,10 @@ public:
 template <int rows, int cols, typename T>
 Matrix(T const (&)[rows][cols]) -> Matrix<rows, cols, T>;
 
-template <int rows, int cols, int stride, typename T>
-Matrix(MatrixView<rows, cols, stride, T> const&) -> Matrix<rows, cols, T>;
+template <int rows, int cols, int stride, typename T, bool _transposed>
+Matrix(View<rows, cols, stride, T, _transposed> const&) -> Matrix<rows, cols, std::remove_const_t<T>>;
 
+template<int rows, typename T>
+using Vector = Matrix<rows, 1, T>;
 
 }

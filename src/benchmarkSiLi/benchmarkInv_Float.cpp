@@ -1,9 +1,7 @@
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
 #include <catch2/catch.hpp>
 
-#include <SiLi/Matrix.h>
-#include <SiLi/MatrixView.h>
-#include <SiLi/operations.h>
+#include <SiLi/SiLi.h>
 #include <armadillo>
 #include <eigen3/Eigen/Dense>
 #include <random>
@@ -11,7 +9,7 @@
 
 TEST_CASE("1x1 matrices inverse float", "[benchmark][inverse][float]") {
 	SECTION("SiLi") {
-		auto m1 = SiLi2::Matrix{{{float{2}}}};
+		auto m1 = SiLi::Matrix{{{float{2}}}};
 
 		BENCHMARK("inverting matrices") {
 			auto z  = inv(m1);
@@ -41,7 +39,7 @@ TEST_CASE("1x1 matrices inverse float", "[benchmark][inverse][float]") {
 
 TEST_CASE("2x2 matrices inverse float", "[benchmark][inverse][float]") {
 	SECTION("SiLi") {
-		auto m1 = SiLi2::Matrix{{{float{2}, float{3}},
+		auto m1 = SiLi::Matrix{{{float{2}, float{3}},
 								 {float{4}, float{5}}}};
 
 		BENCHMARK("inverting matrices") {
@@ -76,7 +74,7 @@ TEST_CASE("2x2 matrices inverse float", "[benchmark][inverse][float]") {
 
 TEST_CASE("3x3 matrices inverse float", "[benchmark][inverse][float]") {
 	SECTION("SiLi") {
-		auto m1 = SiLi2::Matrix{{{float{  2}, float{  3}, float{  4}},
+		auto m1 = SiLi::Matrix{{{float{  2}, float{  3}, float{  4}},
 								 {float{  4}, float{  5}, float{  5}},
 								 {float{100}, float{200}, float{300}}}};
 
@@ -121,7 +119,7 @@ TEST_CASE("3x3 matrices inverse float", "[benchmark][inverse][float]") {
 TEST_CASE("4x4 matrices inverse float", "[benchmark][inverse][float]") {
 	constexpr int N = 4;
 	SECTION("SiLi") {
-		auto m1 = SiLi2::Matrix<N, N, float>{};
+		auto m1 = SiLi::Matrix<N, N, float>{};
 
 		auto gen = std::mt19937{N};
 		auto dist = std::uniform_real_distribution<float>{-1000., 1000.};
@@ -174,7 +172,7 @@ TEST_CASE("4x4 matrices inverse float", "[benchmark][inverse][float]") {
 TEST_CASE("5x5 matrices inverse float", "[benchmark][inverse][float]") {
 	constexpr int N = 5;
 	SECTION("SiLi") {
-		auto m1 = SiLi2::Matrix<N, N, float>{};
+		auto m1 = SiLi::Matrix<N, N, float>{};
 
 		auto gen = std::mt19937{N};
 		auto dist = std::uniform_real_distribution<float>{-1000., 1000.};
@@ -227,7 +225,7 @@ TEST_CASE("5x5 matrices inverse float", "[benchmark][inverse][float]") {
 TEST_CASE("10x10 matrices inverse float", "[benchmark][inverse][float]") {
 	constexpr int N = 10;
 	SECTION("SiLi") {
-		auto m1 = SiLi2::Matrix<N, N, float>{};
+		auto m1 = SiLi::Matrix<N, N, float>{};
 
 		auto gen = std::mt19937{N};
 		auto dist = std::uniform_real_distribution<float>{-1000., 1000.};
@@ -280,7 +278,7 @@ TEST_CASE("10x10 matrices inverse float", "[benchmark][inverse][float]") {
 TEST_CASE("20x20 matrices inverse float", "[benchmark][inverse][float]") {
 	constexpr int N = 20;
 	SECTION("SiLi") {
-		auto m1 = SiLi2::Matrix<N, N, float>{};
+		auto m1 = SiLi::Matrix<N, N, float>{};
 
 		auto gen = std::mt19937{N};
 		auto dist = std::uniform_real_distribution<float>{-1000., 1000.};

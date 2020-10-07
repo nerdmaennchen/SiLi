@@ -1,15 +1,18 @@
-#include <SiLi/Matrix.h>
-#include <SiLi/MatrixView.h>
-#include <SiLi/operations.h>
-
-
+#include <SiLi/SiLi.h>
 #include <catch2/catch.hpp>
 
-using namespace SiLi2;
+using namespace SiLi;
 
 TEST_CASE("make_mat", "[init]") {
+	SECTION("init 3x1") {
+		constexpr auto m = SiLi::Matrix<3, 1, double>{2., 3., 4.}; // Critical
+		static_assert(std::is_same_v<decltype(m)::value_t, double>);
+		static_assert(3 == decltype(m)::Rows);
+		static_assert(1 == decltype(m)::Cols);
+	}
+
 	SECTION("init 1x2") {
-		constexpr auto m = SiLi2::Matrix{{{2., 3.}}}; // Critical
+		constexpr auto m = SiLi::Matrix{{{2., 3.}}}; // Critical
 		static_assert(std::is_same_v<decltype(m)::value_t, double>);
 		static_assert(1 == decltype(m)::Rows);
 		static_assert(2 == decltype(m)::Cols);
@@ -18,7 +21,7 @@ TEST_CASE("make_mat", "[init]") {
 	}
 
 	SECTION("init 2x2") {
-		constexpr auto m = SiLi2::Matrix{{{2., 3.},
+		constexpr auto m = SiLi::Matrix{{{2., 3.},
 		                                  {0., 4.}}}; // Critical
 		static_assert(std::is_same_v<decltype(m)::value_t, double>);
 		static_assert(2 == decltype(m)::Rows);
@@ -30,8 +33,8 @@ TEST_CASE("make_mat", "[init]") {
 	}
 
 	SECTION("addition") {
-		constexpr auto m1 = SiLi2::Matrix{{{2., 3.}}};
-		constexpr auto m2 = SiLi2::Matrix{{{4., 5.}}};
+		constexpr auto m1 = SiLi::Matrix{{{2., 3.}}};
+		constexpr auto m2 = SiLi::Matrix{{{4., 5.}}};
 		constexpr auto z  = m1 + m2; // Critical
 
 		static_assert(std::is_same_v<decltype(z)::value_t, double>);
@@ -42,8 +45,8 @@ TEST_CASE("make_mat", "[init]") {
 	}
 
 	SECTION("addition with different type") {
-		constexpr auto m1 = SiLi2::Matrix{{{2., 3.}}};
-		constexpr auto m2 = SiLi2::Matrix{{{4, 5}}};
+		constexpr auto m1 = SiLi::Matrix{{{2., 3.}}};
+		constexpr auto m2 = SiLi::Matrix{{{4, 5}}};
 		constexpr auto z  = m1 + m2; // Critical
 		static_assert(std::is_same_v<decltype(m1)::value_t, double>);
 		static_assert(std::is_same_v<decltype(m2)::value_t, int>);
@@ -57,8 +60,8 @@ TEST_CASE("make_mat", "[init]") {
 
 
 	SECTION("addition - inplace") {
-		constexpr auto m1 = SiLi2::Matrix{{{2., 3.}}};
-		constexpr auto m2 = SiLi2::Matrix{{{4., 5.}}};
+		constexpr auto m1 = SiLi::Matrix{{{2., 3.}}};
+		constexpr auto m2 = SiLi::Matrix{{{4., 5.}}};
 		constexpr auto z  = [=](auto x) {
 			return x += m2; // Critical
 		}(m1);
@@ -71,8 +74,8 @@ TEST_CASE("make_mat", "[init]") {
 	}
 
 	SECTION("addition - inplace with different type") {
-		constexpr auto m1 = SiLi2::Matrix{{{2., 3.}}};
-		constexpr auto m2 = SiLi2::Matrix{{{4, 5}}};
+		constexpr auto m1 = SiLi::Matrix{{{2., 3.}}};
+		constexpr auto m2 = SiLi::Matrix{{{4, 5}}};
 		constexpr auto z  = [=](auto x) {
 			return x += m2; // Critical
 		}(m1);
@@ -85,8 +88,8 @@ TEST_CASE("make_mat", "[init]") {
 	}
 
 	SECTION("subsrtaction") {
-		constexpr auto m1 = SiLi2::Matrix{{{2., 3.}}};
-		constexpr auto m2 = SiLi2::Matrix{{{4., 5.}}};
+		constexpr auto m1 = SiLi::Matrix{{{2., 3.}}};
+		constexpr auto m2 = SiLi::Matrix{{{4., 5.}}};
 		constexpr auto z  = m1 - m2; // Critical
 
 		static_assert(std::is_same_v<decltype(z)::value_t, double>);
@@ -97,8 +100,8 @@ TEST_CASE("make_mat", "[init]") {
 	}
 
 	SECTION("substraction with type change") {
-		constexpr auto m1 = SiLi2::Matrix{{{2., 3.}}};
-		constexpr auto m2 = SiLi2::Matrix{{{4, 5}}};
+		constexpr auto m1 = SiLi::Matrix{{{2., 3.}}};
+		constexpr auto m2 = SiLi::Matrix{{{4, 5}}};
 		constexpr auto z  = m1 - m2; // Critical
 		static_assert(std::is_same_v<decltype(m1)::value_t, double>);
 		static_assert(std::is_same_v<decltype(m2)::value_t, int>);
@@ -112,8 +115,8 @@ TEST_CASE("make_mat", "[init]") {
 
 
 	SECTION("substraction - inplace") {
-		constexpr auto m1 = SiLi2::Matrix{{{2., 3.}}};
-		constexpr auto m2 = SiLi2::Matrix{{{4., 5.}}};
+		constexpr auto m1 = SiLi::Matrix{{{2., 3.}}};
+		constexpr auto m2 = SiLi::Matrix{{{4., 5.}}};
 		constexpr auto z  = [=](auto x) {
 			return x -= m2; // Critical
 		}(m1);
@@ -126,8 +129,8 @@ TEST_CASE("make_mat", "[init]") {
 	}
 
 	SECTION("substraction - inplace with different type") {
-		constexpr auto m1 = SiLi2::Matrix{{{2., 3.}}};
-		constexpr auto m2 = SiLi2::Matrix{{{4, 5}}};
+		constexpr auto m1 = SiLi::Matrix{{{2., 3.}}};
+		constexpr auto m2 = SiLi::Matrix{{{4, 5}}};
 		constexpr auto z  = [=](auto x) {
 			return x -= m2; // Critical
 		}(m1);
@@ -140,51 +143,51 @@ TEST_CASE("make_mat", "[init]") {
 	}
 
 	SECTION("multiplication") {
-		constexpr auto m1 = SiLi2::Matrix{{{2., 3.}}};
-		constexpr auto m2 = SiLi2::Matrix{{{4.}, {5.}}};
+		constexpr auto m1 = SiLi::Matrix{{{2., 3.}}};
+		constexpr auto m2 = SiLi::Matrix{{{4.}, {5.}}};
 		constexpr auto z = m1 * m2; // Critical;
 
-		static_assert(std::is_same_v<decltype(z), const double>);
-		static_assert(23. == z);
+		static_assert(std::is_same_v<decltype(z), const SiLi::Matrix<1, 1, double>>);
+		static_assert(23. == double{z});
 	}
 
 	SECTION("operator==") {
-		static constexpr auto l = SiLi2::Matrix{{{2., 3.},
-		                                         {0., 4.}}};
-		static constexpr auto r = SiLi2::Matrix{{{7., 8.},
-		                                         {1., 5.}}};
+		static constexpr auto l = SiLi::Matrix{{{2., 3.},
+		                                        {0., 4.}}};
+		static constexpr auto r = SiLi::Matrix{{{7., 8.},
+		                                        {1., 5.}}};
 		static_assert(not (l == r));
 	}
 	SECTION("operator==") {
-		static constexpr auto l = SiLi2::Matrix{{{2., 3.},
-		                                         {0., 4.}}};
-		static constexpr auto r = SiLi2::Matrix{{{2., 3.},
-		                                         {0., 4.}}};
+		static constexpr auto l = SiLi::Matrix{{{2., 3.},
+		                                        {0., 4.}}};
+		static constexpr auto r = SiLi::Matrix{{{2., 3.},
+		                                        {0., 4.}}};
 		static_assert(l == r);
 	}
 
 
 
 	SECTION("operator!=") {
-		static constexpr auto l = SiLi2::Matrix{{{2., 3.},
-		                                         {0., 4.}}};
-		static constexpr auto r = SiLi2::Matrix{{{7., 8.},
-		                                         {1., 5.}}};
+		static constexpr auto l = SiLi::Matrix{{{2., 3.},
+		                                        {0., 4.}}};
+		static constexpr auto r = SiLi::Matrix{{{7., 8.},
+		                                        {1., 5.}}};
 		static_assert(l != r);
 	}
 	SECTION("operator!=") {
-		static constexpr auto l = SiLi2::Matrix{{{2., 3.},
-		                                         {0., 4.}}};
-		static constexpr auto r = SiLi2::Matrix{{{2., 3.},
-		                                         {0., 4.}}};
+		static constexpr auto l = SiLi::Matrix{{{2., 3.},
+		                                        {0., 4.}}};
+		static constexpr auto r = SiLi::Matrix{{{2., 3.},
+		                                        {0., 4.}}};
 		static_assert(not (l != r));
 	}
 
 
 
 	SECTION("diag 2x2") {
-		static constexpr auto m = SiLi2::Matrix{{{2., 3.},
-		                                         {0., 4.}}};
+		static constexpr auto m = SiLi::Matrix{{{2., 3.},
+		                                        {0., 4.}}};
 		static constexpr auto z = view_diag(m); // Critical
 		static_assert(std::is_same_v<decltype(z)::value_t, const double>);
 		static_assert(2 == decltype(z)::Rows);
@@ -194,7 +197,7 @@ TEST_CASE("make_mat", "[init]") {
 	}
 
 	SECTION("diag 2x2 - multiplication") {
-		static constexpr auto m = SiLi2::Matrix{{{2., 3.},
+		static constexpr auto m = SiLi::Matrix{{{2., 3.},
 		                                         {0., 4.}}};
 		static constexpr auto z = view_diag(m) * 3.; // Critical
 		static_assert(std::is_same_v<decltype(z)::value_t, double>);
@@ -205,7 +208,7 @@ TEST_CASE("make_mat", "[init]") {
 	}
 
 	SECTION("diag 2x2") {
-		static constexpr auto m = SiLi2::Matrix{{{2., 3.},
+		static constexpr auto m = SiLi::Matrix{{{2., 3.},
 		                                         {0., 4.}}};
 		static constexpr auto z = diag(m); // Critical
 		static_assert(std::is_same_v<decltype(z)::value_t, double>);
@@ -217,7 +220,7 @@ TEST_CASE("make_mat", "[init]") {
 
 
 	SECTION("diag 2x2 - view") {
-		static constexpr auto m = SiLi2::Matrix{{{2., 3.},
+		static constexpr auto m = SiLi::Matrix{{{2., 3.},
 		                                         {0., 4.}}};
 		static constexpr auto z = [](auto x) {
 			view_diag(x) = 7.; // Critical
@@ -232,7 +235,7 @@ TEST_CASE("make_mat", "[init]") {
 		static_assert(7. == z(1, 1));
 	}
 	SECTION("view 3x3 ") {
-		static constexpr auto m = SiLi2::Matrix{{{11, 12, 13},
+		static constexpr auto m = SiLi::Matrix{{{11, 12, 13},
 		                                         {21, 22, 23},
 		                                         {31, 32, 33}}};
 
@@ -292,9 +295,9 @@ TEST_CASE("make_mat", "[init]") {
 		}
 	}
 	SECTION("row 3x3") {
-		static constexpr auto m = SiLi2::Matrix{{{11, 12, 13},
-		                                         {21, 22, 23},
-		                                         {31, 32, 33}}};
+		static constexpr auto m = SiLi::Matrix{{{11, 12, 13},
+		                                        {21, 22, 23},
+		                                        {31, 32, 33}}};
 		SECTION("row 0") {
 			static constexpr auto z = view_row<0>(m); // Critical
 			static_assert(z == Matrix{{{11, 12, 13}}});
@@ -309,9 +312,9 @@ TEST_CASE("make_mat", "[init]") {
 		}
 	}
 	SECTION("col 3x3") {
-		static constexpr auto m = SiLi2::Matrix{{{11, 12, 13},
-		                                         {21, 22, 23},
-		                                         {31, 32, 33}}};
+		static constexpr auto m = SiLi::Matrix{{{11, 12, 13},
+		                                        {21, 22, 23},
+		                                        {31, 32, 33}}};
 		SECTION("col 0") {
 			static constexpr auto z = view_col<0>(m); // Critical	}
 			static_assert(z == Matrix{{{11}, {21}, {31}}});
@@ -327,90 +330,90 @@ TEST_CASE("make_mat", "[init]") {
 	}
 
 	SECTION("join_rows 2x2") {
-		static constexpr auto m0 = SiLi2::Matrix{{{22., 23.},
-		                                          {20., 24.}}};
-		static constexpr auto m1 = SiLi2::Matrix{{{12., 13., 14.},
-		                                          {10., 14., 17.}}};
+		static constexpr auto m0 = SiLi::Matrix{{{22., 23.},
+		                                         {20., 24.}}};
+		static constexpr auto m1 = SiLi::Matrix{{{12., 13., 14.},
+		                                         {10., 14., 17.}}};
 
 		static constexpr auto z = join_rows(m0, m1); // Critical
-		static_assert(z == SiLi2::Matrix{{{22., 23., 12., 13., 14.},
-		                                  {20., 24., 10., 14., 17.}}});
+		static_assert(z == SiLi::Matrix{{{22., 23., 12., 13., 14.},
+		                                 {20., 24., 10., 14., 17.}}});
 	}
 
 	SECTION("join_cols 2x2") {
-		static constexpr auto m0 = SiLi2::Matrix{{{22., 23.},
-		                                          {20., 24.},
-		                                          {26., 27.}}};
-		static constexpr auto m1 = SiLi2::Matrix{{{12., 13.},
-		                                          {10., 14.}}};
+		static constexpr auto m0 = SiLi::Matrix{{{22., 23.},
+		                                         {20., 24.},
+		                                         {26., 27.}}};
+		static constexpr auto m1 = SiLi::Matrix{{{12., 13.},
+		                                         {10., 14.}}};
 
 		static constexpr auto z = join_cols(m0, m1); // Critical
-		static_assert(z == SiLi2::Matrix{{{22., 23.},
-		                                  {20., 24.},
-		                                  {26., 27.},
-		                                  {12., 13.},
-		                                  {10., 14.}}});
+		static_assert(z == SiLi::Matrix{{{22., 23.},
+		                                 {20., 24.},
+		                                 {26., 27.},
+		                                 {12., 13.},
+		                                 {10., 14.}}});
 	}
 	SECTION("det 1x1") {
-		static constexpr auto m = SiLi2::Matrix{{{4.}}};
+		static constexpr auto m = SiLi::Matrix{{{4.}}};
 		static constexpr auto z = det(m); // Critical
 		static_assert(4. == z);
 	}
 
 	SECTION("det 2x2") {
-		static constexpr auto m = SiLi2::Matrix{{{4., 5.},
-		                                         {6., 8.}}};
+		static constexpr auto m = SiLi::Matrix{{{4., 5.},
+		                                        {6., 8.}}};
 		static constexpr auto z = det(m); // Critical
 		static_assert(2. == z);
 	}
 	SECTION("det 2x2 - zero") {
-		static constexpr auto m = SiLi2::Matrix{{{4., 5.},
-		                                         {4., 5.}}};
+		static constexpr auto m = SiLi::Matrix{{{4., 5.},
+		                                        {4., 5.}}};
 		static constexpr auto z = det(m); // Critical
 		static_assert(0. == z);
 	}
 	SECTION("det 2x2 - negative") {
-		static constexpr auto m = SiLi2::Matrix{{{4.,  5.},
-		                                         {6., -8.}}};
+		static constexpr auto m = SiLi::Matrix{{{4.,  5.},
+		                                        {6., -8.}}};
 		static constexpr auto z = det(m); // Critical
 		static_assert(-62. == z);
 	}
 	SECTION("det 3x3") {
-		static constexpr auto m = SiLi2::Matrix{{{4.,  5., 6.},
-		                                         {6., -8., 9.},
-		                                         {3.,  4., 1.}}};
+		static constexpr auto m = SiLi::Matrix{{{4.,  5., 6.},
+		                                        {6., -8., 9.},
+		                                        {3.,  4., 1.}}};
 		static constexpr auto z = det(m); // Critical
 		static_assert(217. == z);
 	}
 
 	SECTION("det 3x3 - zero") {
-		static constexpr auto m = SiLi2::Matrix{{{4.,  5., 6.},
-		                                         {3.,  4., 1.},
-		                                         {3.,  4., 1.}}};
+		static constexpr auto m = SiLi::Matrix{{{4.,  5., 6.},
+		                                        {3.,  4., 1.},
+		                                        {3.,  4., 1.}}};
 		static constexpr auto z = det(m); // Critical
 		static_assert(0. == z);
 	}
 
 
 	SECTION("det 3x3 - negative") {
-		static constexpr auto m = SiLi2::Matrix{{{4., 5., 6.},
-		                                         {6., 8., 9.},
-		                                         {3., 4., 1.}}};
+		static constexpr auto m = SiLi::Matrix{{{4., 5., 6.},
+		                                        {6., 8., 9.},
+		                                        {3., 4., 1.}}};
 		static constexpr auto z = det(m); // Critical
 		static_assert(-7. == z);
 	}
 	SECTION("det 4x4") {
-		static constexpr auto m = SiLi2::Matrix{{{ 1.,   2.,  3.,  10.},
-		                                         { 2.,   3.,  4.,  20.},
-		                                         { 4.,  -1., 10.,  50.},
-		                                         {10., -11., 12., -13.}}};
+		static constexpr auto m = SiLi::Matrix{{{ 1.,   2.,  3.,  10.},
+		                                        { 2.,   3.,  4.,  20.},
+		                                        { 4.,  -1., 10.,  50.},
+		                                        {10., -11., 12., -13.}}};
 		static constexpr auto z = det(m); // Critical
 		static_assert(2248. == z);
 	}
 
 	SECTION("element multiplication") {
-		constexpr auto m1 = SiLi2::Matrix{{{2., 3.}}};
-		constexpr auto m2 = SiLi2::Matrix{{{4., 5.}}};
+		constexpr auto m1 = SiLi::Matrix{{{2., 3.}}};
+		constexpr auto m2 = SiLi::Matrix{{{4., 5.}}};
 		constexpr auto z  = element_multi(m1, m2); // Critical
 
 		static_assert(std::is_same_v<decltype(z)::value_t, double>);
@@ -421,8 +424,8 @@ TEST_CASE("make_mat", "[init]") {
 	}
 
 	SECTION("element multiplication with different type") {
-		constexpr auto m1 = SiLi2::Matrix{{{2., 3.}}};
-		constexpr auto m2 = SiLi2::Matrix{{{4, 5}}};
+		constexpr auto m1 = SiLi::Matrix{{{2., 3.}}};
+		constexpr auto m2 = SiLi::Matrix{{{4, 5}}};
 		constexpr auto z  = element_multi(m1, m2); // Critical
 		static_assert(std::is_same_v<decltype(m1)::value_t, double>);
 		static_assert(std::is_same_v<decltype(m2)::value_t, int>);
@@ -435,15 +438,15 @@ TEST_CASE("make_mat", "[init]") {
 	}
 
 	SECTION("cross") {
-		constexpr auto m1 = SiLi2::Matrix{{{1.}, {0.}, {0.}}};
-		constexpr auto m2 = SiLi2::Matrix{{{0.}, {1.}, {0.}}};
-		constexpr auto z  = cross(m1, m2); // Critical
-		static_assert(z == SiLi2::Matrix{{{0.}, {0.}, {1.}}});
+		constexpr auto m1 = SiLi::Matrix{{{1.}, {0.}, {0.}}};
+		constexpr auto m2 = SiLi::Matrix{{{0.}, {1.}, {0.}}};
+		constexpr auto z   = cross(m1, m2); // Critical
+		static_assert(z == SiLi::Matrix{{{0.}, {0.}, {1.}}});
 	}
 
 	SECTION("inv 2x2") {
-		constexpr auto m = SiLi2::Matrix{{{11., 12.},
-		                                  {31., 32.}}};
+		constexpr auto m = SiLi::Matrix{{{11., 12.},
+		                                 {31., 32.}}};
 		constexpr auto z = inv(m); // Critical
 		static_assert(std::abs(std::get<0>(z)) > 0);
 
@@ -454,9 +457,9 @@ TEST_CASE("make_mat", "[init]") {
 	}
 
 	SECTION("inv 3x3") {
-		constexpr static auto m = SiLi2::Matrix{{{ 2., 1.,  3.},
-                                                 { 1., 3., -3.},
-                                                 {-2., 4.,  4.}}};
+		constexpr static auto m = SiLi::Matrix{{{ 2., 1.,  3.},
+                                                { 1., 3., -3.},
+                                                {-2., 4.,  4.}}};
 		constexpr static auto z = inv(m); // Critical
 		static_assert(std::abs(std::get<0>(z)) > 0);
 		static_assert(std::abs(std::get<1>(z)(0, 0) - ( 0.3000)) < 1.e-9);
@@ -470,14 +473,53 @@ TEST_CASE("make_mat", "[init]") {
 		static_assert(std::abs(std::get<1>(z)(2, 2) - ( 0.0625)) < 1.e-9);
 	}
 
-	SECTION("3x3") {
-		auto m = SiLi2::Matrix{{{11, 12, 13},
-		                        {21, 22, 23},
-		                        {31, 32, 33}}};
-		auto view1 = m.view();
-		auto view2 = MatrixView(m);
-
-		auto z = m + m;
+	SECTION("transposed 2x2 - view") {
+		static constexpr auto m = SiLi::Matrix{{{2., 3.},
+		                                        {0., 4.}}};
+		static constexpr auto z = view_trans(m); // Critical
+		static_assert(2 == decltype(z)::Rows);
+		static_assert(2 == decltype(z)::Cols);
+		static_assert(2. == z(0, 0));
+		static_assert(0. == z(0, 1));
+		static_assert(3. == z(1, 0));
+		static_assert(4. == z(1, 1));
 	}
+
+	SECTION("transposed 2x2") {
+		static constexpr auto m = SiLi::Matrix{{{2., 3.},
+		                                        {0., 4.}}};
+		static constexpr auto z = trans(m); // Critical
+		static_assert(2 == decltype(z)::Rows);
+		static_assert(2 == decltype(z)::Cols);
+		static_assert(2. == z(0, 0));
+		static_assert(0. == z(0, 1));
+		static_assert(3. == z(1, 0));
+		static_assert(4. == z(1, 1));
+	}
+
+	SECTION("transposed^2 2x2 - view") {
+		static constexpr auto m = SiLi::Matrix{{{2., 3.},
+		                                        {0., 4.}}};
+		static constexpr auto z = view_trans(view_trans(m)); // Critical
+
+		static_assert(2 == decltype(z)::Rows);
+		static_assert(2 == decltype(z)::Cols);
+		static_assert(2. == z(0, 0));
+		static_assert(3. == z(0, 1));
+		static_assert(0. == z(1, 0));
+		static_assert(4. == z(1, 1));
+	}
+
+	SECTION("transposed 2x2 - view - diag") {
+		static constexpr auto m = SiLi::Matrix{{{2., 3.},
+		                                        {0., 4.}}};
+		static constexpr auto z0 = view_trans(m); // Critical
+		static constexpr auto z  = view_diag(z0); // Critical
+		static_assert(2 == decltype(z)::Rows);
+		static_assert(1 == decltype(z)::Cols);
+		static_assert(2. == z(0));
+		static_assert(4. == z(1));
+	}
+
 
 }
