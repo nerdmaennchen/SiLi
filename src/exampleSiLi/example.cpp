@@ -1,33 +1,33 @@
 #include <SiLi/SiLi.h>
 #include <SiLi/ostream.h>
 
-using namespace SiLi;
 int main() {
-	{
-		auto m1 = Matrix{{{1., 0.},
-		                  {0., 1.},
-		                  {3., 4.}}};
+    // m1 is of type Matrix<3, 2, double>
+    auto m1 = SiLi::Matrix{{{1., 0.},
+                            {0., 1.},
+                            {3., 4.}}};
 
-		auto m2 = Matrix{{{1., 0.},
-		                  {0., 1.},
-		                  {3., 4.}}};
+    // m2 is of type Matrix<2, 3, double>
+    auto m2 = SiLi::Matrix{{{1., 0., 3.},
+                            {0., 1., 4.}}};
 
-		auto m3 = m1 * view_trans(m2);
-		auto m4 = view_trans(m2) * m1;
+    // m3 is of type Matrix<3, 3, double>
+    auto m3 = m1 * m2;
 
-		for (auto& v : m1) {
-			std::cout << "m1: " << v << "\n";
-		}
-		std::cout << "\n\n";
-		for (auto& v : view<1, 0, 2, 2>(m1)) {
-			std::cout << "m1: " << v << "\n";
-		}
-		std::cout << "\n\n";
-		std::cout << m1 << "\n";
-		std::cout << "\n\n";
+    // m4 is of type Matrix<2, 2, double>
+    auto m4 = m2 * m1;
 
-		std::cout << view<1, 0, 3, 2>(m1) << "\n";
+    // print matrix
+    std::cout << "m1:\n" << m1 << "\n\n";
+    std::cout << "m2:\n" << m2 << "\n\n";
+    std::cout << "m3:\n" << m3 << "\n\n";
+    std::cout << "m4:\n" << m4 << "\n\n";
 
-
-	}
+    // print matrix element by element
+    for (int row = 0; row < rows(m1); ++row) {
+        for (int col = 0; col < cols(m1); ++col) {
+            std::cout << m1(row, col) << "\n";
+        }
+    }
 }
+

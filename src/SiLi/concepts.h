@@ -1,6 +1,14 @@
 #pragma once
 
 #include <type_traits>
+#include <utility>
+
+/** \addtogroup concept
+ *
+ *  Concepts
+ */
+
+
 
 namespace SiLi {
 
@@ -35,8 +43,10 @@ template<int _rows, int _cols, int _stride, typename T, bool _transposed>
 struct is_view<View<_rows, _cols, _stride, T, _transposed>&&> : std::true_type {};
 template<int _rows, int _cols, int _stride, typename T, bool _transposed>
 struct is_view<View<_rows, _cols, _stride, T, _transposed> const&> : std::true_type {};
-
-
+/*!\brief A view on a matrix
+ * \ingroup concept
+ *
+ */
 template <typename T>
 concept Viewable = is_matrix<T>::value or is_view<T>::value;
 
@@ -90,34 +100,90 @@ template <typename T> constexpr int  cols_v       = detail::cols<T>::value;;
 template <typename T> constexpr int  stride_v     = detail::stride<T>::value;;
 template <typename T> constexpr bool transposed_v = detail::transposed<T>::value;;
 
+template <Viewable T>
+constexpr bool is_vector_v = (rows_v<T> == 1 or cols_v<T> == 1);
+
+template <typename T>
+concept ViewableVector = is_vector_v<T>;
+
+template <ViewableVector T>
+constexpr int length_v = ((detail::rows<T>::value==1)?detail::cols<T>::value:detail::rows<T>::value);
 
 
+namespace details {
 // !TODO for_constexpr, is there a standard solution?
-template <auto Iter, auto End, typename L>
-constexpr void for_constexpr(L lambda) {
+template <auto Iter, auto End, typename L> requires (std::is_same_v<void, decltype(std::declval<L>().template operator()<Iter>())>)
+constexpr void for_constexpr_void(L lambda) {
 	if constexpr(Iter != End) {
-		using R = decltype(lambda.template operator()<Iter>());
-		if constexpr (std::is_same_v<bool, R>) {
-			auto r = lambda.template operator()<Iter>();
-			if (r) {
-				for_constexpr<Iter+1, End>(lambda);
-			}
+		lambda.template operator()<Iter>();
+		for_constexpr<Iter+1, End>(lambda);
+	}
+}
+template <auto Iter, auto End, typename L> requires (std::is_same_v<bool, decltype(std::declval<L>().template operator()<Iter>())>)
+constexpr bool for_constexpr_bool(L lambda) {
+	if constexpr(Iter != End) {
+		auto r = lambda.template operator()<Iter>();
+		if (not r) {
+			return false;
+		}
+		return for_constexpr<Iter+1, End>(lambda);
+	}
+	return true;
+}
+}
+
+template <auto Begin, auto End, typename L>
+constexpr bool for_constexpr(L&& lambda) {
+	if constexpr (Begin == End) {
+		return true;
+	} else {
+		using R = decltype(std::declval<L>().template operator()<Begin>());
+		if constexpr (std::is_same_v<R, void>) {
+			details::for_constexpr_void<Begin, End>(std::forward<L>(lambda));
+			return true;
 		} else {
-			lambda.template operator()<Iter>();
-			for_constexpr<Iter+1, End>(lambda);
+			return details::for_constexpr_bool<Begin, End>(std::forward<L>(lambda));
 		}
 	}
 }
 
+
+
+namespace details {
 // !TODO for_each_constexpr, is there a standard solution?
 template <Viewable V, typename L>
-constexpr auto for_each_constexpr(L const& lambda) {
+constexpr void for_each_constexpr_void(L&& lambda) {
 	for_constexpr<0, rows_v<V>>([&]<auto row>() {
 		for_constexpr<0, cols_v<V>>([&]<auto col>() {
 			lambda.template operator()<row, col>();
 		});
 	});
 }
+template <Viewable V, typename L>
+constexpr bool for_each_constexpr_bool(L&& lambda) {
+	return for_constexpr<0, rows_v<V>>([&]<auto row>() {
+		return for_constexpr<0, cols_v<V>>([&]<auto col>() {
+			return lambda.template operator()<row, col>();
+		});
+	});
+}
+
+}
+template <Viewable V, typename L>
+constexpr bool for_each_constexpr(L&& lambda) {
+	if constexpr (rows_v<V> == 0 or cols_v<V> == 0) {
+		return true;
+	} else {
+		using R = decltype(std::declval<L>().template operator()<0, 0>());
+		if constexpr (std::is_same_v<R, void>) {
+			details::for_each_constexpr_void<V>(std::forward<L>(lambda));
+			return true;
+		} else {
+			return details::for_each_constexpr_bool<V>(std::forward<L>(lambda));
+		}
+	}
+}
+
 
 
 

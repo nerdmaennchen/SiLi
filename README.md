@@ -1,38 +1,63 @@
 # SiLi
 A simple and basic linear algebra library for c++ using little code.
 
-The best part is: 
-It's all contained within a single header file and does not depend ony any 3rd party library. 
+The best part is:
+It's all contained within a single header file and does not depend on any 3rd party library.
 
 # Features
-* Compile time matrix size checking
-* no new/delete/malloc/free usage
-* exchangable datatypes
+* Compile time matrices
+* no heap allocations - new/delete/malloc/free
+* exchangeable datatype
 * Matrix operations:
-  * Matrix operations: multiplikation, addition, substraction, negation, assignment
-  * Element wise operations: multiplikation, assignment
+  * Matrix operations: multiplication, addition, subtraction, negation, assignment
+  * Element wise operations: multiplication, assignment
   * views on matrices
   * determinant
   * inverse()
   * norm()
   * normalize()
-  * svd decomposition
   * transpose (as a view)
-  * diagnoal acces (as a view)
+  * diagonal access (as a view)
   * iteration over elements, rows or columns possible
   * join_rows()/join_cols()
-  * isfinite()
   * abs()
   * sum()
-  * cross() for 3x1 Matrices
-* Quaternion operations:
-  * conversion from/to matrices
-  * multipikation, addition, substracton
-  * img(), real()
-  * norm()
-  * normalize()
-  * conjugate()
-  * dot()
-  * slerp()
-  * rotate()
-  * computation of minimal rotation between two vectors
+  * cross() (for 3x1 Matrices)
+
+
+# Example
+```
+#include <SiLi/SiLi.h>
+#include <SiLi/ostream.h>
+
+int main() {
+    // m1 is of type Matrix<3, 2, double>
+    auto m1 = SiLi::Matrix{{{1., 0.},
+                            {0., 1.},
+                            {3., 4.}}};
+
+    // m2 is of type Matrix<2, 3, double>
+    auto m2 = SiLi::Matrix{{{1., 0., 3.},
+                            {0., 1., 4.}}};
+
+    // m3 is of type Matrix<3, 3, double>
+    auto m3 = m1 * m2;
+
+    // m4 is of type Matrix<2, 2, double>
+    auto m4 = m2 * m1;
+
+    // print matrix
+    std::cout << "m1:\n" << m1 << "\n\n";
+    std::cout << "m2:\n" << m2 << "\n\n";
+    std::cout << "m3:\n" << m3 << "\n\n";
+    std::cout << "m4:\n" << m4 << "\n\n";
+
+    // print matrix element by element
+    for (int row = 0; row < rows(m1); ++row) {
+        for (int col = 0; col < cols(m1); ++col) {
+            std::cout << m1(row, col) << "\n";
+        }
+    }
+}
+```
+

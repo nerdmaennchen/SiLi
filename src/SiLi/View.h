@@ -6,7 +6,7 @@ namespace SiLi {
 
 template<int _rows, int _cols, int _stride, typename T, bool _transposed> requires (_rows >= 0 and _cols >= 0 and _stride >= 0)
 class View<_rows, _cols, _stride, T, _transposed> {
-	T* mData;
+	T& mData;
 public:
 	using value_t = T;
 	static constexpr int  Rows       = _rows;
@@ -15,19 +15,25 @@ public:
 	static constexpr bool Transposed = _transposed;
 
 	constexpr View(T* _data)
-		: mData{_data}
+		: mData{*_data}
 	{};
 
 	constexpr View(Matrix<_rows, _cols, T> matrix)
-		: mData{matrix.data()}
+		: mData{*matrix.data()}
 	{};
 
+	View(View& v)
+		: mData{v.mData}
+	{}
+
+	View(View const& v) = delete;
+
 	constexpr auto data() -> T* {
-		return mData;
+		return &mData;
 	}
 
 	constexpr auto data() const -> T const* {
-		return mData;
+		return &mData;
 	}
 	explicit constexpr operator T() requires (Rows == 1 and Cols == 1) {
 		return get(*this, 0, 0);
@@ -80,6 +86,5 @@ View(Matrix<_rows, _cols, T>&) -> View<_rows, _cols, _cols, T, false>;
 
 template <int _rows, int _cols, typename T>
 View(Matrix<_rows, _cols, T> const&) -> View<_rows, _cols, _cols, T const, false>;
-
 
 }
