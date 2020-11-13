@@ -38,10 +38,12 @@ template<int _rows, int _cols, int _stride, typename T, bool _transposed>
 struct is_view<View<_rows, _cols, _stride, T, _transposed> const&> : std::true_type {};
 
 namespace _concept {
-/*! Concept of a Matrix.
+/*! Concept of a _concept::Matrix.
+ * \shortexample _concept::Matrix
+
  *
  * Abstract concept of a matrix. This can be either a Matrix or a View.
- * Both can be used everywhere the Matrix concept is needed.
+ * Both can be used everywhere the _concept::Matrix concept is needed.
  */
 template <typename T>
 concept Matrix = is_matrix<T>::value or is_view<T>::value;
@@ -102,7 +104,8 @@ template <_concept::Matrix T>
 constexpr bool is_vector_v = (rows_v<T> == 1 or cols_v<T> == 1);
 
 namespace _concept {
-/*! Concept of a Vector.
+/*! Concept of a _concept::Vector.
+ * \shortexample _concept::Vector
  *
  * Abstract concept of a vector. This can be either a Matrix or a View where either columns or rows is 1.
  */

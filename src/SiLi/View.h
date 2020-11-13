@@ -8,7 +8,7 @@ namespace SiLi {
  *
  * Fullfills the _concept::Matrix concept.
  *
- * If _rows or _cols is 1 it fullfills the ViewableVector concept.
+ * If _rows or _cols is 1 it fullfills the _concept::Vector concept.
  *
  * \caption Template Parameters
  * \param _rows number of rows of the view, must be larger or equal to zero
@@ -16,6 +16,11 @@ namespace SiLi {
  * \param _stride length of the stride
  * \param T     type of the elements
  * \param _transposed indicates if index access of _rows and _cols should be inverted to simulate transpose access
+ *
+ * * \caption Methods
+ * \param data() returns pointer to the underlying data structure
+ * \param m(row,col) access element at ``row`` and ``col``
+
  */
 
 template<int _rows, int _cols, int _stride, typename T, bool _transposed> requires (_rows >= 0 and _cols >= 0 and _stride >= 0)

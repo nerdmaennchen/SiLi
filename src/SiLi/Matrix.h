@@ -10,12 +10,16 @@ namespace SiLi {
  *
  * Fullfills the _concept::Matrix concept.
  *
- * If _rows or _cols is 1 it fullfills the ViewableVector concept.
+  * If _rows or _cols is 1 it fullfills _concept::Vector.
  *
  * \caption Template Parameters
  * \param _rows number of rows of the matrix, must be larger or equal to zero
  * \param _cols number of columns of the matrix, must be larger or equal to zero
  * \param T     type of the elements
+ *
+ * \caption Methods
+ * \param data() returns pointer to the underlying data structure
+ * \param m(row,col) access element at ``row`` and ``col``
  */
 template<int _rows, int _cols, typename T> requires (_rows >= 0 and _cols >= 0)
 class Matrix<_rows, _cols, T> {

@@ -15,8 +15,8 @@ template <typename T>
 constexpr auto value() -> typename std::add_rvalue_reference<value_t<T>>::type;
 
 /*! Access element
- * \shortexample at<3, 2>(v)
- * \group Free Matrix Function
+ * \shortexample at<Row, Col>(m)
+ * \group Free Matrix Functions
  *
  * Checking accessibility at compile time.
  *
@@ -25,7 +25,7 @@ constexpr auto value() -> typename std::add_rvalue_reference<value_t<T>>::type;
  * \param Col access column. Validvalue [0-Col)
  *
  * \caption Parameters
- * \param v   Viewable
+ * \param m   _concept::Matrix
  * \return    returns reference to underlying element
  *
  * \code
@@ -37,21 +37,21 @@ constexpr auto value() -> typename std::add_rvalue_reference<value_t<T>>::type;
  *                                      {5, 6}}
  * \endcode
  */
-template <int Row, int Col, _concept::Matrix V>
-constexpr auto at(V&& v) -> auto& {
-	static_assert(0 <= Row and Row < rows_v<V>, "accessing outside of valid range");
-	static_assert(0 <= Col and Col < cols_v<V>, "accessing outside of valid range");
-	return v(Row, Col);
+template <int Row, int Col, _concept::Matrix M>
+constexpr auto at(M&& m) -> auto& {
+	static_assert(0 <= Row and Row < rows_v<M>, "accessing outside of valid range");
+	static_assert(0 <= Col and Col < cols_v<M>, "accessing outside of valid range");
+	return m(Row, Col);
 }
 
 /*! Access element
- * \shortexample at<2>(v);
- * \group Free Vector Function
+ * \shortexample at<Idx>(v);
+ * \group Free Vector Functions
  *
  * Checking accessibility at compile time.
  *
  * \param Idx row access
- * \param v   Viewable must have columns==1 or rows==1
+ * \param m   _concept::Vector
  * \return    returns reference to underlying element
  *
  * \code
@@ -73,10 +73,10 @@ constexpr auto at(V&& v) -> auto& {
 }
 
 /*! Number of rows
- * \shortexample rows(v)
- * \group Free Matrix Function
+ * \shortexample rows(m)
+ * \group Free Matrix Functions
  *
- * \param v Viewable
+ * \param m _concept::Matrix
  * \return  number of rows
  *
  * \code
@@ -85,17 +85,17 @@ constexpr auto at(V&& v) -> auto& {
  *   std::cout << rows(m) << "\n"; // prints 2
  * \endcode
  */
-template <_concept::Matrix V>
-constexpr auto rows(V const& v) {
-	return rows_v<V>;
+template <_concept::Matrix M>
+constexpr auto rows(M const& m) {
+	return rows_v<M>;
 }
 
 
 /*! Number of columns
- * \shortexample cols(v)
- * \group Free Matrix Function
+ * \shortexample cols(m)
+ * \group Free Matrix Functions
  *
- * \param  v Viewable
+ * \param  m _concept::Matrix
  * \return   number of columns
  *
  * \code
@@ -104,9 +104,9 @@ constexpr auto rows(V const& v) {
  *   std::cout << cols(m) << "\n"; // prints 3
  * \endcode
  */
-template <_concept::Matrix V>
-constexpr auto cols(V const& v) {
-	return cols_v<V>;
+template <_concept::Matrix M>
+constexpr auto cols(M const& m) {
+	return cols_v<M>;
 }
 
 namespace details {
@@ -147,12 +147,12 @@ constexpr auto self_assign_apply(L&& l, R const& r, Operator op) -> auto& {
 }
 }
 
-/*! Copy of v
- * \shortexample +v
+/*! Copy of m
+ * \shortexample +m
  * \group Matrix Operations
  *
- * \param v Viewable
- * \return copy of v with `+` applied to every element
+ * \param m _concept::Matrix
+ * \return copy of m with ``+`` applied to every element
  *
  * \code
  *   auto m = SiLi::Matrix{{{3, 4, 7},
@@ -162,18 +162,18 @@ constexpr auto self_assign_apply(L&& l, R const& r, Operator op) -> auto& {
  *   std::cout << m2 << "\n";
  * \endcode
  */
-template <_concept::Matrix V>
-constexpr auto operator+(V const& v) {
-	return details::apply(v, [](auto v) { return +v; });
+template <_concept::Matrix M>
+constexpr auto operator+(M const& m) {
+	return details::apply(m, [](auto e) { return +e; });
 }
 
 /*! Elementwise addition
- * \shortexample a + b
+ * \shortexample l + r
  * \group Matrix Operations
  *
- * \param l left matrix of addition
- * \param r right matrix of addition
- * \return  matrix with l and r
+ * \param l left _concept::Matrix of addition
+ * \param r right _concept::Matrix of addition
+ * \return  Matrix with l and r
  *
  * l and r must have the same dimension.
  *
@@ -193,11 +193,11 @@ constexpr auto operator+(L const& l, R const& r) {
 }
 
 /*! Elementwise addition
- * \shortexample a += b
+ * \shortexample l += r
  * \group Matrix Operations
  *
- * \param l left Viewable
- * \param r right Viewable
+ * \param l left _concept::Matrix
+ * \param r right _concept::Matrix
  * \return  reference to l
  *
  * l and r must have the same dimension.
@@ -218,11 +218,11 @@ constexpr auto operator+=(L&& l, R const& r) -> auto& {
 }
 
 /*! Elementwise negation
- * \shortexample -v
+ * \shortexample -m
  * \group Matrix Operations
  *
- * \param v Viewable
- * \return  matrix with negated elements
+ * \param m _concept::Matrix
+ * \return  Matrix with negated elements
  *
  * \code
  *   auto m = SiLi::Matrix{{{3, 4, 7},
@@ -232,17 +232,17 @@ constexpr auto operator+=(L&& l, R const& r) -> auto& {
  *   std::cout << m2 << "\n";
  * \endcode
  */
-template <_concept::Matrix V>
-constexpr auto operator-(V const& v) {
-	return details::apply(v, [](auto v) { return -v; });
+template <_concept::Matrix M>
+constexpr auto operator-(M const& m) {
+	return details::apply(m, [](auto e) { return -e; });
 }
 
 /*! Elementwise subtraction
- * \shortexample a - b
+ * \shortexample l - r
  * \group Matrix Operations
  *
- * \param l left Viewable
- * \param r right Viewable
+ * \param l left _concept::Matrix
+ * \param r right _concept::Matrix
  * \return  matrix with (l - r)
  *
  * l and r must have the same dimension.
@@ -263,11 +263,11 @@ constexpr auto operator-(L const& l, R const& r) {
 }
 
 /*! Elementwise subtraction
- * \shortexample a += b
+ * \shortexample l += r
  * \group Matrix Operations
  *
- * \param l left Viewable
- * \param r right Viewable
+ * \param l left _concept::Matrix
+ * \param r right _concept::Matrix
  * \return  reference to l
  *
  * l and r must have the same dimension.
@@ -288,11 +288,11 @@ constexpr auto operator-=(L& l, R const& r) -> auto& {
 }
 
 /*! Matrix multiplication
- * \shortexample a * b
+ * \shortexample l * r
  * \group Matrix Operations
  *
- * \param l Viewable
- * \param r Viewable
+ * \param l _concept::Matrix
+ * \param r _concept::Matrix
  * \return Matrix with result of l and r multiplication
  *
  * l must have the same number of columns as r has rows.
@@ -330,10 +330,10 @@ constexpr auto operator*(L const& l, R const& r) {
 }
 
 /*! Scalar multiplication
- * \shortexample v * s
+ * \shortexample l * s
  * \group Matrix Operations
  *
- * \param l Viewable
+ * \param l _concept::Matrix
  * \param s scalar value
  * \return Matrix with each element multiplied with s
  *
@@ -351,11 +351,11 @@ constexpr auto operator*(L const& l, value_t<L> const& s) {
 }
 
 /*! Scalar multiplication
- * \shortexample s * v
+ * \shortexample s * r
  * \group Matrix Operations
  *
  * \param s scalar value
- * \param r Viewable
+ * \param r _concept::Matrix
  * \return Matrix with each element multiplied with s
  *
  * \code
@@ -372,10 +372,10 @@ constexpr auto operator*(value_t<R> const& s, R&& r) {
 }
 
 /*! Scalar multiplication
- * \shortexample v *= s
+ * \shortexample l *= s
  * \group Matrix Operations
  *
- * \param l Viewable
+ * \param l _concept::Matrix
  * \param s scalar value
  * \return Referenc to l
  *
@@ -393,10 +393,10 @@ constexpr auto operator*=(L&& l, value_t<L> const& s) -> auto& {
 }
 
 /*! Divide elements by a scalar
- * \shortexample v / s
+ * \shortexample l / s
  * \group Matrix Operations
  *
- * \param l Viewable
+ * \param l _concept::Matrix
  * \param s scalar
  * \return Matrix same size and type as l
  *
@@ -415,10 +415,10 @@ constexpr auto operator/(L const& l, value_t<L> const& s) {
 
 
 /*! Divide elementwise by a scalar
- * \shortexample v /= s
+ * \shortexample l /= s
  * \group Matrix Operations
  *
- * \param l Viewable
+ * \param l _concept::Matrix
  * \param s scalar
  * \return  reference to l
  *
@@ -436,11 +436,11 @@ constexpr auto operator/=(L&& l, value_t<L> const& s) -> L& {
 }
 
 /*! Elementwise comparision
- * \shortexample a == b
- * \group Free Matrix Function
+ * \shortexample l == r
+ * \group Free Matrix Functions
  *
- * \param l Viewable
- * \param r Viewable
+ * \param l _concept::Matrix
+ * \param r _concept::Matrix
  * \return  true if all elements are equal, otherwise false
  *
  * l and r must have same dimensions
@@ -465,11 +465,11 @@ constexpr auto operator==(L const& l, R const& r) -> bool {
 }
 
 /*! Elementwise comparision
- * \shortexample a != b
- * \group Free Matrix Function
+ * \shortexample l != r
+ * \group Free Matrix Functions
  *
- * \param l Viewable
- * \param r Viewable
+ * \param l _concept::Matrix
+ * \param r _concept::Matrix
  * \return  false if all element are equal, otherwise true
  *
  * l and r must have same dimensions
@@ -492,11 +492,11 @@ constexpr auto operator!=(L const& l, R const& r) -> bool {
 }
 
 /*! Diagonal view
- * \shortexample view_diag(v)
- * \group Free Matrix Function
+ * \shortexample view_diag(m)
+ * \group Free Matrix Functions
  *
- * \param v Viewable
- * \return  Viewable representing a column vector that gives access to the diagonal of v
+ * \param m _concept::Matrix
+ * \return  View representing a column vector that gives access to the diagonal of m
  *
  * \code
  *   auto a = SiLi::Matrix{{{15, 20, 35},
@@ -510,21 +510,21 @@ constexpr auto operator!=(L const& l, R const& r) -> bool {
  *                                      {25,  8, 40}}
  * \endcode
  */
-template <_concept::Matrix V>
-constexpr auto view_diag(V&& v) {
-	using U = value_t<V>;
+template <_concept::Matrix M>
+constexpr auto view_diag(M&& m) {
+	using U = value_t<M>;
 	using std::min;
-	constexpr auto length = min(cols_v<V>, rows_v<V>);
-	constexpr auto stride = stride_v<V>+1;
-	return View<length, 1, stride, U, false>{v.data()};
+	constexpr auto length = min(cols_v<M>, rows_v<M>);
+	constexpr auto stride = stride_v<M>+1;
+	return View<length, 1, stride, U, false>{m.data()};
 }
 
 /*! Diagonal
- * \shortexample diag(v)
- * \group Free Matrix Function
+ * \shortexample diag(m)
+ * \group Free Matrix Functions
  *
- * \param v Viewable
- * \return  Matrix as a column vector with the diagonal values of v
+ * \param m _concept::Matrix
+ * \return  Matrix as a column vector with the diagonal values of m
  *
  * \code
  *   auto a = SiLi::Matrix{{{15, 20, 35},
@@ -534,17 +534,17 @@ constexpr auto view_diag(V&& v) {
  *   std::cout << v(0) << " " << v(1) << "\n"; // prints 15 and 30
  * \endcode
  */
-template <_concept::Matrix V>
-constexpr auto diag(V const& v) {
-	return Matrix{view_diag(v)};
+template <_concept::Matrix M>
+constexpr auto diag(M const& m) {
+	return Matrix{view_diag(m)};
 }
 
 /*! Super diagonal view
- * \shortexample view_upper_diag(v)
- * \group Free Matrix Function
+ * \shortexample view_upper_diag(m)
+ * \group Free Matrix Functions
  *
- * \param v Viewable
- * \return  Viewable representing a column vector that gives access to the super diagonal of v
+ * \param m _concept::Matrix
+ * \return  View representing a column vector that gives access to the super diagonal of m
  *
  * The super diagonal is the diagonal above the diagonal
  *
@@ -560,21 +560,21 @@ constexpr auto diag(V const& v) {
  *                                      {25, 30,  8}}
  * \endcode
  */
-template <_concept::Matrix V>
-constexpr auto view_upper_diag(V&& v) {
-	return view_diag(view<0, 1, End, End>(v));
+template <_concept::Matrix M>
+constexpr auto view_upper_diag(M&& m) {
+	return view_diag(view<0, 1, End, End>(m));
 }
 
 /*! View
- * \shortexample view<1, 1, 3, 3>(v)
- * \group Free Matrix Function
+ * \shortexample view<R0, C0, R1, C1>(m)
+ * \group Free Matrix Functions
  *
  * \param start_row starting row
  * \param start_col starting column
  * \param end_row   end row (exclusive). Use SiLi::End to indicate rows(v).
  * \param end_col   end column (exclusive). Use SiLi::End to indicate cols(v).
- * \param v         Viewable
- * \return          Viewable
+ * \param v         _concept::Matrix
+ * \return          View
  *
  *
  * Returns a view onto a matrix
@@ -596,20 +596,20 @@ constexpr auto view_upper_diag(V&& v) {
 
  * \endcode
  */
-template <int start_row, int start_col, int end_row, int end_col, _concept::Matrix V>
-    requires (end_row <= rows_v<V> and end_col <= cols_v<V>)
-constexpr auto view(V&& v) {
-	using U = value_t<V>;
+template <int start_row, int start_col, int end_row, int end_col, _concept::Matrix M>
+    requires (end_row <= rows_v<M> and end_col <= cols_v<M>)
+constexpr auto view(M&& m) {
+	using U = value_t<M>;
 
 	constexpr auto rows       = end_row - start_row;
 	constexpr auto cols       = end_col - start_col;
-	constexpr auto stride     = stride_v<V>;
-	constexpr auto transposed = transposed_v<V>;
+	constexpr auto stride     = stride_v<M>;
+	constexpr auto transposed = transposed_v<M>;
 
 	if constexpr (not transposed) {
-		return View<rows, cols, stride, U, transposed>{v.data() + start_col + start_row * stride};
+		return View<rows, cols, stride, U, transposed>{m.data() + start_col + start_row * stride};
 	} else {
-		return View<rows, cols, stride, U, transposed>{v.data() + start_row + start_col * stride};
+		return View<rows, cols, stride, U, transposed>{m.data() + start_row + start_col * stride};
 	}
 }
 
@@ -653,11 +653,11 @@ constexpr auto view_col(V&& v) {
 }
 
 /*! Joins rows
- * \shortexample join_rows(a, b)
- * \group Free Matrix Function
+ * \shortexample join_rows(l, r)
+ * \group Free Matrix Functions
  *
- * \param l Viewable
- * \param r Viewable
+ * \param l _concept::Matrix
+ * \param r _concept::Matrix
  * \return  Matrix of joined rows of l and r
  *
  * l and r must have same number of rows.
@@ -683,7 +683,7 @@ constexpr auto join_rows(L const& l, R const& r) {
 
 /*! Joins columns
  * \shortexample join_cols(a, b)
- * \group Free Matrix Function
+ * \group Free Matrix Functions
  *
  * \param l Viewable
  * \param r Viewable
@@ -759,11 +759,11 @@ constexpr auto det(V const& v) {
 }
 
 /*! Compute determinant
- * \shortexample det(v)
- * \group Free Matrix Function
+ * \shortexample det(m)
+ * \group Free Matrix Functions
  *
- * \param v Viewable must have same number of rows and columns
- * \return  Determinant of v
+ * \param m _concept::Matrix must have same number of rows and columns
+ * \return  Determinant of m
  *
  * \code
  *   auto a = SiLi::Matrix{{{ 1,  2},
@@ -772,14 +772,14 @@ constexpr auto det(V const& v) {
  *   std::cout << v << "\n"; // prints -10
  * \endcode
  */
-template <_concept::Matrix V> requires (V::Rows == V::Cols and V::Rows > 3)
-constexpr auto det(V const& v) {
-	using T = typename V::value_t;
+template <_concept::Matrix M> requires (M::Rows == M::Cols and M::Rows > 3)
+constexpr auto det(M const& m) {
+	using T = typename M::value_t;
 	auto retValue = T{1};
 
-	auto L        = luDecomposition_L(v);
+	auto L        = luDecomposition_L(m);
 
-	for_constexpr<0, V::Rows>([&]<int i>() {
+	for_constexpr<0, M::Rows>([&]<int i>() {
 		retValue *= L(i, i);
 	});
 
@@ -802,11 +802,11 @@ constexpr auto element_multi(L const& l, R const& r) {
 }
 
 /*! Cross product of two vectors.
- * \shortexample cross(a, b)
- * \group Free Matrix Function
+ * \shortexample cross(l, r)
+ * \group Free Matrix Functions
  *
- * \param l Viewable of size 3×1.
- * \param r Viewable of size 3×1.
+ * \param l _concept::Vector of length 3.
+ * \param r _concept::Vector of length.
  * \return  Matrix of size 3×1 with cross product of l and r.
  *
  * \code
@@ -824,7 +824,7 @@ constexpr auto element_multi(L const& l, R const& r) {
  *                                      {-3}}
  * \endcode
  */
-template <_concept::Matrix L, _concept::Matrix R> requires (L::Rows == R::Rows and L::Cols == R::Cols and L::Rows == 3 and L::Cols == 1)
+template <_concept::Vector L, _concept::Vector R> requires (length_v<R> == 3 and length_v<L> == 3)
 constexpr auto cross(L const& l, R const& r) {
 	using U = decltype(std::declval<typename L::value_t>() * std::declval<typename R::value_t>());
 	auto ret = Matrix<3, 1, U>{};
@@ -835,11 +835,11 @@ constexpr auto cross(L const& l, R const& r) {
 }
 
 /*! Sum of all elements.
- * \shortexample sum(v)
- * \group Free Matrix Function
+ * \shortexample sum(m)
+ * \group Free Matrix Functions
  *
- * \param v Viewable
- * \return  Sum off all elements of v.
+ * \param m _concept::Matrix
+ * \return  Sum off all elements of m.
  *
  * \code
  *   auto a = SiLi::Matrix{{{3, 4, 7},
@@ -848,21 +848,21 @@ constexpr auto cross(L const& l, R const& r) {
  *   std::cout << c << "\n"; // prints 33
  * \endcode
  */
-template <_concept::Matrix V>
-constexpr auto sum(V const& v) {
-	auto acc = value_t<V>{};
-	for_each_constexpr<V>([&]<auto row, auto col>() {
-		acc += v(row, col);
+template <_concept::Matrix M>
+constexpr auto sum(M const& m) {
+	auto acc = value_t<M>{};
+	for_each_constexpr<M>([&]<auto row, auto col>() {
+		acc += m(row, col);
 	});
 	return acc;
 }
 
 /*! Sum of each row.
- * \shortexample sum_rows(v)
- * \group Free Matrix Function
+ * \shortexample sum_rows(m)
+ * \group Free Matrix Functions
  *
- * \param v Viewable
- * \return  Column vector with the sums of each row of v
+ * \param m _concept::Matrix
+ * \return  Column vector with the sums of each row of m
  *
  * \code
  *   auto a = SiLi::Matrix{{{3, 4, 7},
@@ -872,22 +872,22 @@ constexpr auto sum(V const& v) {
  *                                      {19}}
  * \endcode
  */
-template <_concept::Matrix V>
-constexpr auto sum_rows(V const& v) {
-	using T = value_t<V>;
-	auto c = Matrix<rows_v<V>, 1, T>{};
-	for_constexpr<0, rows_v<V>>([&]<int row>() {
-		at<row>(c) = sum(view_row<row>(v));
+template <_concept::Matrix M>
+constexpr auto sum_rows(M const& m) {
+	using T = value_t<M>;
+	auto c = Matrix<rows_v<M>, 1, T>{};
+	for_constexpr<0, rows_v<M>>([&]<int row>() {
+		at<row>(c) = sum(view_row<row>(m));
 	});
 	return c;
 }
 
 /*! Sum of each column.
- * \shortexample sum_cols(v)
- * \group Free Matrix Function
+ * \shortexample sum_cols(m)
+ * \group Free Matrix Functions
  *
- * \param v Viewable
- * \return  Row vector with the sums of each column of v
+ * \param m _concept::Matrix
+ * \return  Row vector with the sums of each column of m
  *
  * \code
  *   auto a = SiLi::Matrix{{{3, 4, 7},
@@ -896,12 +896,12 @@ constexpr auto sum_rows(V const& v) {
  *   std::cout << c << "\n"; // prints {{8, 10, 15}}
  * \endcode
  */
-template <_concept::Matrix V>
-constexpr auto sum_cols(V const& v) {
-	using T = value_t<V>;
-	auto c = Matrix<1, cols_v<V>, T>{};
-	for_constexpr<0, cols_v<V>>([&]<int col>() {
-		at<col>(c) = sum(view_col<col>(v));
+template <_concept::Matrix M>
+constexpr auto sum_cols(M const& m) {
+	using T = value_t<M>;
+	auto c = Matrix<1, cols_v<M>, T>{};
+	for_constexpr<0, cols_v<M>>([&]<int col>() {
+		at<col>(c) = sum(view_col<col>(m));
 	});
 	return c;
 }
@@ -959,10 +959,10 @@ constexpr auto inv(V v) -> std::tuple<typename V::value_t, V> {
 }
 
 /*! Compute inverse
- * \shortexample inv(v)
- * \group Free Matrix Function
+ * \shortexample inv(m)
+ * \group Free Matrix Functions
  *
- * \param  v Viewable must have same number of rows as number of cols.
+ * \param  m _concept::Matrix must have same number of rows as number of cols.
  * \return   Returns tuple of determinant and inverse, if detereminant is zero the inverse is invalid.
  *
  * \code
@@ -974,41 +974,41 @@ constexpr auto inv(V v) -> std::tuple<typename V::value_t, V> {
  *                                      { 1.1, -0.1}}
  * \endcode
  */
-template <_concept::Matrix V> requires (V::Rows == V::Cols and V::Rows > 3)
-constexpr auto inv(V v) -> std::tuple<typename V::value_t, V> {
-	using T = typename V::value_t;
-	constexpr int N = V::Rows;
+template <_concept::Matrix M> requires (M::Rows == M::Cols and M::Rows > 3)
+constexpr auto inv(M m) -> std::tuple<typename M::value_t, M> {
+	using T = typename M::value_t;
+	constexpr int N = M::Rows;
 	auto det   = T{1};
 
 	bool failed{false};
 	for_constexpr<0, N>([&]<int p>() -> bool {
-		auto pivot = v(p, p);
+		auto pivot = m(p, p);
 		det = det * pivot;
 		if (fabs(pivot) < 1.e-5) {
 			failed = true;
 			return false;
 		}
-		view_col<p>(v) /= -pivot;
-		for_each_constexpr<V>([&]<int i, int j>() {
+		view_col<p>(m) /= -pivot;
+		for_each_constexpr<M>([&]<int i, int j>() {
 			if (i == p or j == p) return;
-			v(i, j) += v(p, j) * v(i, p);
+			m(i, j) += m(p, j) * m(i, p);
 		});
-		view_row<p>(v) /= pivot;
-		v(p, p) = T{1}/ pivot;
+		view_row<p>(m) /= pivot;
+		m(p, p) = T{1}/ pivot;
 		return true;
 	});
 	if (failed) {
-		return {0., v};
+		return {0., m};
 	}
-	return {det, v};
+	return {det, m};
 }
 
 /*! Transposed view
- * \shortexample view_trans(v)
- * \group Free Matrix Function
+ * \shortexample view_trans(m)
+ * \group Free Matrix Functions
  *
- * \param  v Viewable
- * \return   Viewable of tho transposed of v
+ * \param  m _concept::Matrix
+ * \return   Matrix of the transposed of m
  *
  * \code
  *   auto a = SiLi::Matrix{{{ 1,  2,  3},
@@ -1019,17 +1019,17 @@ constexpr auto inv(V v) -> std::tuple<typename V::value_t, V> {
  *                                      {3, 13}}
  * \endcode
  */
-template <_concept::Matrix V>
-constexpr auto view_trans(V&& v) {
-	return View<cols_v<V>, rows_v<V>, stride_v<V>, value_t<V>, not transposed_v<V>>{v.data()};
+template <_concept::Matrix M>
+constexpr auto view_trans(M&& m) {
+	return View<cols_v<M>, rows_v<M>, stride_v<M>, value_t<M>, not transposed_v<M>>{m.data()};
 }
 
 /*! Transposed
- * \shortexample trans(v)
- * \group Free Matrix Function
+ * \shortexample trans(m)
+ * \group Free Matrix Functions
  *
- * \param  v Viewable
- * \return   Matrix of the transposed of v
+ * \param  m _concept::Matrix
+ * \return   Matrix of the transposed of m
  *
  * \code
  *   auto a = SiLi::Matrix{{{ 1,  2,  3},
@@ -1040,14 +1040,14 @@ constexpr auto view_trans(V&& v) {
  *                                      {3, 13}}
  * \endcode
  */
-template <_concept::Matrix V>
-constexpr auto trans(V&& v) {
-	return Matrix{view_trans(v)};
+template <_concept::Matrix M>
+constexpr auto trans(M&& m) {
+	return Matrix{view_trans(m)};
 }
 
 /*! Identity matrix
- * \shortexample SiLi::makeI<3, 4, int>()
- * \group Free Matrix Function
+ * \shortexample SiLi::makeI<Rows, Cols, int>()
+ * \group Free Matrix Functions
  *
  * \param Rows number of rows
  * \param Cols number of columns
@@ -1069,8 +1069,8 @@ constexpr auto makeI() {
 }
 
 /*! Identity matrix
- * \shortexample SiLi::makeI<3, int>()
- * \group Free Matrix Function
+ * \shortexample SiLi::makeI<N, int>()
+ * \group Free Matrix Functions
  *
  * \param N size of the matrix
  * \param T type of each element
@@ -1091,9 +1091,9 @@ constexpr auto makeI() {
 
 /*! Compute norm
  * \shortexample norm(v)
- * \group Free Vector Function
+ * \group Free Vector Functions
  *
- * \param v ViewableVector
+ * \param v _concept::Vector
  * \return  the norm (also considered as the length).
  *
  * \code
@@ -1116,11 +1116,11 @@ constexpr auto norm(V const& v) {
 }
 
 /*! Compute abs
- * \shortexample abs(v)
- * \group Free Matrix Function
+ * \shortexample abs(m)
+ * \group Free Matrix Functions
  *
- * \param v Viewable
- * \return  the norm (also considered as the length).
+ * \param m _concept::Matrix
+ * \return  the absolute values
  *
  * \code
  *   auto a = SiLi::Matrix{{{ -3.},
@@ -1133,19 +1133,19 @@ constexpr auto norm(V const& v) {
  *                           // {5}}
  * \endcode
  */
-template <_concept::Matrix V>
-constexpr auto abs(V const& v) {
+template <_concept::Matrix M>
+constexpr auto abs(M const& m) {
 	using std::abs;
-	return details::apply(v, [](auto v) { return abs(v); });
+	return details::apply(m, [](auto e) { return abs(e); });
 }
 
 
 /*! Dot product of two vectors
- * \shortexample dot(a, b)
- * \group Free Vector Function
+ * \shortexample dot(l, r)
+ * \group Free Vector Functions
  *
- * \param l ViewableVector
- * \param r ViewableVector
+ * \param l _concept::Vector
+ * \param r _concept::Vector
  * \return  the dot product (also called scalar product) of l and r. l and r must be vectors of the same length
  *
  * \code
@@ -1172,11 +1172,11 @@ constexpr auto dot(L const& l, R const& r) {
 }
 
 /*! Outer product
- * \shortexample outerProd(a, b)
- * \group Free Vector Function
+ * \shortexample outerProd(l, r)
+ * \group Free Vector Functions
  *
- * \param l ViewableVector
- * \param r ViewableVector
+ * \param l _concept::Vector
+ * \param r _concept::Vector
  * \return  Matrix with the outer product of l and r
  *
  * \code
