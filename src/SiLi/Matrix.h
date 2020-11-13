@@ -6,6 +6,17 @@
 
 namespace SiLi {
 
+/*! Represents a matrix
+ *
+ * Fullfills the _concept::Matrix concept.
+ *
+ * If _rows or _cols is 1 it fullfills the ViewableVector concept.
+ *
+ * \caption Template Parameters
+ * \param _rows number of rows of the matrix, must be larger or equal to zero
+ * \param _cols number of columns of the matrix, must be larger or equal to zero
+ * \param T     type of the elements
+ */
 template<int _rows, int _cols, typename T> requires (_rows >= 0 and _cols >= 0)
 class Matrix<_rows, _cols, T> {
 	std::array<T, _cols*_rows> vals;
@@ -32,7 +43,7 @@ public:
 			}
 		}
 	}
-	template <Viewable V>
+	template <_concept::Matrix V>
 	constexpr Matrix(V const& view) requires (V::Rows == Rows and V::Cols == Cols) {
 		*this = view;
 	}
@@ -89,14 +100,13 @@ public:
 		return *this;
 	}
 
-	template <Viewable V>
+	template <_concept::Matrix V>
 	constexpr auto operator=(V const& v) -> Matrix& requires (Rows == V::Rows and Cols == V::Cols) {
 		for_each_constexpr<Matrix>([&]<int row, int col>() {
 			this->operator()(row, col) = v(row, col);
 		});
 		return *this;
 	}
-
 };
 
 template <int rows, int cols, typename T>

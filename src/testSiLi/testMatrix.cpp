@@ -520,6 +520,4 @@ TEST_CASE("make_mat", "[init]") {
 		static_assert(2. == z(0));
 		static_assert(4. == z(1));
 	}
-
-
 }

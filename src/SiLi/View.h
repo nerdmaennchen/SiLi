@@ -4,6 +4,20 @@
 
 namespace SiLi {
 
+/*! Represents a view onto a matrix
+ *
+ * Fullfills the _concept::Matrix concept.
+ *
+ * If _rows or _cols is 1 it fullfills the ViewableVector concept.
+ *
+ * \caption Template Parameters
+ * \param _rows number of rows of the view, must be larger or equal to zero
+ * \param _cols number of columns of the view, must be larger or equal to zero
+ * \param _stride length of the stride
+ * \param T     type of the elements
+ * \param _transposed indicates if index access of _rows and _cols should be inverted to simulate transpose access
+ */
+
 template<int _rows, int _cols, int _stride, typename T, bool _transposed> requires (_rows >= 0 and _cols >= 0 and _stride >= 0)
 class View<_rows, _cols, _stride, T, _transposed> {
 	T& mData;
@@ -70,7 +84,7 @@ public:
 		});
 		return *this;
 	}
-	template <Viewable V>
+	template <_concept::Matrix V>
 	constexpr auto operator=(V const& v) -> View& requires (Rows == V::Rows and Cols == V::Cols) {
 		for_each_constexpr<View>([&]<int row, int col>() {
 			this->operator()(row, col) = v(row, col);

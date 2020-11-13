@@ -3,13 +3,6 @@
 #include <type_traits>
 #include <utility>
 
-/** \addtogroup concept
- *
- *  Concepts
- */
-
-
-
 namespace SiLi {
 
 template<int, int, typename, typename...>
@@ -43,56 +36,61 @@ template<int _rows, int _cols, int _stride, typename T, bool _transposed>
 struct is_view<View<_rows, _cols, _stride, T, _transposed>&&> : std::true_type {};
 template<int _rows, int _cols, int _stride, typename T, bool _transposed>
 struct is_view<View<_rows, _cols, _stride, T, _transposed> const&> : std::true_type {};
-/*!\brief A view on a matrix
- * \ingroup concept
+
+namespace _concept {
+/*! Concept of a Matrix.
  *
+ * Abstract concept of a matrix. This can be either a Matrix or a View.
+ * Both can be used everywhere the Matrix concept is needed.
  */
 template <typename T>
-concept Viewable = is_matrix<T>::value or is_view<T>::value;
+concept Matrix = is_matrix<T>::value or is_view<T>::value;
+
+}
 
 // value_t for finding the underlying value
 namespace detail {
 template <typename T>
 struct value_t;
 
-template <Viewable V>
+template <_concept::Matrix V>
 struct value_t<V> : std::type_identity<typename V::value_t> {};
-template <Viewable V>
+template <_concept::Matrix V>
 struct value_t<V&> : std::type_identity<typename V::value_t> {};
-template <Viewable V>
+template <_concept::Matrix V>
 struct value_t<V&&> : std::type_identity<typename V::value_t> {};
-template <Viewable V>
+template <_concept::Matrix V>
 struct value_t<V const&> : std::type_identity<const typename V::value_t> {};
 }
 
 template <typename T>
-using value_t = detail::value_t<T>::type;
+using value_t = typename detail::value_t<T>::type;
 
 // find the underlying rows, cols and stride
 namespace detail {
 template <typename T> struct rows;
-template <Viewable V> struct rows<V> : std::integral_constant<int, V::Rows> {};
-template <Viewable V> struct rows<V&> : std::integral_constant<int, V::Rows> {};
-template <Viewable V> struct rows<V&&> : std::integral_constant<int, V::Rows> {};
-template <Viewable V> struct rows<V const&> : std::integral_constant<int, V::Rows> {};
+template <_concept::Matrix V> struct rows<V> : std::integral_constant<int, V::Rows> {};
+template <_concept::Matrix V> struct rows<V&> : std::integral_constant<int, V::Rows> {};
+template <_concept::Matrix V> struct rows<V&&> : std::integral_constant<int, V::Rows> {};
+template <_concept::Matrix V> struct rows<V const&> : std::integral_constant<int, V::Rows> {};
 
 template <typename T> struct cols;
-template <Viewable V> struct cols<V> : std::integral_constant<int, V::Cols> {};
-template <Viewable V> struct cols<V&> : std::integral_constant<int, V::Cols> {};
-template <Viewable V> struct cols<V&&> : std::integral_constant<int, V::Cols> {};
-template <Viewable V> struct cols<V const&> : std::integral_constant<int, V::Cols> {};
+template <_concept::Matrix V> struct cols<V> : std::integral_constant<int, V::Cols> {};
+template <_concept::Matrix V> struct cols<V&> : std::integral_constant<int, V::Cols> {};
+template <_concept::Matrix V> struct cols<V&&> : std::integral_constant<int, V::Cols> {};
+template <_concept::Matrix V> struct cols<V const&> : std::integral_constant<int, V::Cols> {};
 
 template <typename T> struct stride;
-template <Viewable V> struct stride<V> : std::integral_constant<int, V::Stride> {};
-template <Viewable V> struct stride<V&> : std::integral_constant<int, V::Stride> {};
-template <Viewable V> struct stride<V&&> : std::integral_constant<int, V::Stride> {};
-template <Viewable V> struct stride<V const&> : std::integral_constant<int, V::Stride> {};
+template <_concept::Matrix V> struct stride<V> : std::integral_constant<int, V::Stride> {};
+template <_concept::Matrix V> struct stride<V&> : std::integral_constant<int, V::Stride> {};
+template <_concept::Matrix V> struct stride<V&&> : std::integral_constant<int, V::Stride> {};
+template <_concept::Matrix V> struct stride<V const&> : std::integral_constant<int, V::Stride> {};
 
 template <typename T> struct transposed;
-template <Viewable V> struct transposed<V> : std::integral_constant<bool, V::Transposed> {};
-template <Viewable V> struct transposed<V&> : std::integral_constant<bool, V::Transposed> {};
-template <Viewable V> struct transposed<V&&> : std::integral_constant<bool, V::Transposed> {};
-template <Viewable V> struct transposed<V const&> : std::integral_constant<bool, V::Transposed> {};
+template <_concept::Matrix V> struct transposed<V> : std::integral_constant<bool, V::Transposed> {};
+template <_concept::Matrix V> struct transposed<V&> : std::integral_constant<bool, V::Transposed> {};
+template <_concept::Matrix V> struct transposed<V&&> : std::integral_constant<bool, V::Transposed> {};
+template <_concept::Matrix V> struct transposed<V const&> : std::integral_constant<bool, V::Transposed> {};
 }
 
 template <typename T> constexpr int  rows_v       = detail::rows<T>::value;;
@@ -100,13 +98,19 @@ template <typename T> constexpr int  cols_v       = detail::cols<T>::value;;
 template <typename T> constexpr int  stride_v     = detail::stride<T>::value;;
 template <typename T> constexpr bool transposed_v = detail::transposed<T>::value;;
 
-template <Viewable T>
+template <_concept::Matrix T>
 constexpr bool is_vector_v = (rows_v<T> == 1 or cols_v<T> == 1);
 
+namespace _concept {
+/*! Concept of a Vector.
+ *
+ * Abstract concept of a vector. This can be either a Matrix or a View where either columns or rows is 1.
+ */
 template <typename T>
-concept ViewableVector = is_vector_v<T>;
+concept Vector = is_vector_v<T>;
+}
 
-template <ViewableVector T>
+template <_concept::Vector T>
 constexpr int length_v = ((detail::rows<T>::value==1)?detail::cols<T>::value:detail::rows<T>::value);
 
 
@@ -151,7 +155,7 @@ constexpr bool for_constexpr(L&& lambda) {
 
 namespace details {
 // !TODO for_each_constexpr, is there a standard solution?
-template <Viewable V, typename L>
+template <_concept::Matrix V, typename L>
 constexpr void for_each_constexpr_void(L&& lambda) {
 	for_constexpr<0, rows_v<V>>([&]<auto row>() {
 		for_constexpr<0, cols_v<V>>([&]<auto col>() {
@@ -159,7 +163,7 @@ constexpr void for_each_constexpr_void(L&& lambda) {
 		});
 	});
 }
-template <Viewable V, typename L>
+template <_concept::Matrix V, typename L>
 constexpr bool for_each_constexpr_bool(L&& lambda) {
 	return for_constexpr<0, rows_v<V>>([&]<auto row>() {
 		return for_constexpr<0, cols_v<V>>([&]<auto col>() {
@@ -169,7 +173,7 @@ constexpr bool for_each_constexpr_bool(L&& lambda) {
 }
 
 }
-template <Viewable V, typename L>
+template <_concept::Matrix V, typename L>
 constexpr bool for_each_constexpr(L&& lambda) {
 	if constexpr (rows_v<V> == 0 or cols_v<V> == 0) {
 		return true;
@@ -187,7 +191,7 @@ constexpr bool for_each_constexpr(L&& lambda) {
 
 
 
-template <Viewable V>
+template <_concept::Matrix V>
 constexpr auto get(V&& v, int row, int col) -> auto& {
 	if constexpr (transposed_v<V>) {
 		return v.data()[row + col * stride_v<V>];
@@ -196,7 +200,7 @@ constexpr auto get(V&& v, int row, int col) -> auto& {
 	}
 }
 
-template <Viewable V>
+template <_concept::Matrix V>
 constexpr auto get(V&& v, int entry) -> auto& requires(rows_v<V> == 1 or cols_v<V> == 1) {
 	if constexpr ((rows_v<V> == 1 and not transposed_v<V>) or (cols_v<V> == 1 and transposed_v<V>)) {
 		return v.data()[entry];

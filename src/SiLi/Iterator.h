@@ -4,7 +4,7 @@
 
 namespace SiLi {
 
-template <Viewable V>
+template <_concept::Matrix V>
 struct Iterator {
 	V& v;
 	int row{0};
@@ -29,11 +29,11 @@ struct Iterator {
 	}
 };
 
-template <Viewable V>
+template <_concept::Matrix V>
 auto begin(V&& v) {
 	return Iterator<V>{std::forward<V>(v), 0, 0};
 }
-template <Viewable V>
+template <_concept::Matrix V>
 auto end(V&& v) {
 	return Iterator<V>{std::forward<V>(v), rows_v<V>, 0};
 }

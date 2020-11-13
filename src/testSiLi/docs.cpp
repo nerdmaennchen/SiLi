@@ -56,7 +56,7 @@ TEST_CASE("check example from docs", "[doc]") {
 	}
 	SECTION("+v") {
 		auto m = SiLi::Matrix{{{3, 4, 7},
-							   {5, 6, 8}}};
+		                       {5, 6, 8}}};
 		auto m2 = +m;
 		CHECK((m == m2));
 	}
@@ -387,6 +387,16 @@ TEST_CASE("check example from docs", "[doc]") {
 		auto z = std::sqrt(50);
 		CHECK(v == z);
 	}
+	SECTION("abs") {
+		auto a = SiLi::Matrix{{{ -3.},
+		                       { -4.},
+		                       { -5.}}};
+		auto v = abs(a);
+		auto z = SiLi::Matrix{{{ 3.},
+		                       { 4.},
+		                       { 5.}}};
+		CHECK((v == z));
+	}
 
 	SECTION("dot") {
 		auto a = SiLi::Matrix{{{ 1},
@@ -399,7 +409,7 @@ TEST_CASE("check example from docs", "[doc]") {
 
 		auto v = dot(a, b);
 
-		CHECK(v == 32);
+		CHECK((v == 32));
 	}
 
 	SECTION("outerProd") {
