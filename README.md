@@ -1,12 +1,11 @@
 # SiLi
 A simple and basic linear algebra library for c++ using little code.
 
-The best part is:
-It's all contained within a single header file and does not depend on any 3rd party library.
+Full Reference [here](https://sgssgene.github.io/SiLi.html)
 
 # Features
 * Compile time matrices
-* no heap allocations - new/delete/malloc/free
+* no heap allocations
 * exchangeable datatype
 * Matrix operations:
   * Matrix operations: multiplication, addition, subtraction, negation, assignment
@@ -15,7 +14,6 @@ It's all contained within a single header file and does not depend on any 3rd pa
   * determinant
   * inverse()
   * norm()
-  * normalize()
   * transpose (as a view)
   * diagonal access (as a view)
   * iteration over elements, rows or columns possible
