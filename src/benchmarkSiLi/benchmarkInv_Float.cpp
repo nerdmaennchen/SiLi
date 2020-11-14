@@ -7,7 +7,7 @@
 #include <random>
 #include <string>
 
-TEST_CASE("1x1 matrices inverse float", "[benchmark][inverse][float]") {
+TEST_CASE("1x1 Matrix inverse (float)", "[benchmark][inverse][float]") {
 	SECTION("SiLi") {
 		auto m1 = SiLi::Matrix{{{float{2}}}};
 
@@ -37,7 +37,7 @@ TEST_CASE("1x1 matrices inverse float", "[benchmark][inverse][float]") {
 	}
 }
 
-TEST_CASE("2x2 matrices inverse float", "[benchmark][inverse][float]") {
+TEST_CASE("2x2 Matrix inverse (float)", "[benchmark][inverse][float]") {
 	SECTION("SiLi") {
 		auto m1 = SiLi::Matrix{{{float{2}, float{3}},
 								 {float{4}, float{5}}}};
@@ -72,7 +72,7 @@ TEST_CASE("2x2 matrices inverse float", "[benchmark][inverse][float]") {
 	}
 }
 
-TEST_CASE("3x3 matrices inverse float", "[benchmark][inverse][float]") {
+TEST_CASE("3x3 Matrix inverse (float)", "[benchmark][inverse][float]") {
 	SECTION("SiLi") {
 		auto m1 = SiLi::Matrix{{{float{  2}, float{  3}, float{  4}},
 								 {float{  4}, float{  5}, float{  5}},
@@ -116,7 +116,7 @@ TEST_CASE("3x3 matrices inverse float", "[benchmark][inverse][float]") {
 	}
 }
 
-TEST_CASE("4x4 matrices inverse float", "[benchmark][inverse][float]") {
+TEST_CASE("4x4 Matrix inverse (float)", "[benchmark][inverse][float]") {
 	constexpr int N = 4;
 	SECTION("SiLi") {
 		auto m1 = SiLi::Matrix<N, N, float>{};
@@ -169,7 +169,7 @@ TEST_CASE("4x4 matrices inverse float", "[benchmark][inverse][float]") {
 	}
 }
 
-TEST_CASE("5x5 matrices inverse float", "[benchmark][inverse][float]") {
+TEST_CASE("5x5 Matrix inverse (float)", "[benchmark][inverse][float]") {
 	constexpr int N = 5;
 	SECTION("SiLi") {
 		auto m1 = SiLi::Matrix<N, N, float>{};
@@ -222,7 +222,7 @@ TEST_CASE("5x5 matrices inverse float", "[benchmark][inverse][float]") {
 	}
 }
 
-TEST_CASE("10x10 matrices inverse float", "[benchmark][inverse][float]") {
+TEST_CASE("10x10 Matrix inverse (float)", "[benchmark][inverse][float]") {
 	constexpr int N = 10;
 	SECTION("SiLi") {
 		auto m1 = SiLi::Matrix<N, N, float>{};
@@ -275,7 +275,7 @@ TEST_CASE("10x10 matrices inverse float", "[benchmark][inverse][float]") {
 	}
 }
 
-TEST_CASE("20x20 matrices inverse float", "[benchmark][inverse][float]") {
+TEST_CASE("20x20 Matrix inverse (float)", "[benchmark][inverse][float]") {
 	constexpr int N = 20;
 	SECTION("SiLi") {
 		auto m1 = SiLi::Matrix<N, N, float>{};

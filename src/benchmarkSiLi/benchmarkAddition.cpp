@@ -7,7 +7,7 @@
 #include <random>
 #include <string>
 
-TEST_CASE("1x1 matrices addition double", "[benchmark][addition][double]") {
+TEST_CASE("1x1 Matrix addition (double)", "[benchmark][addition][double]") {
 	SECTION("SiLi") {
 		auto m1 = SiLi::Matrix{{{double{2}}}};
 		auto m2 = SiLi::Matrix{{{double{4}}}};
@@ -44,7 +44,7 @@ TEST_CASE("1x1 matrices addition double", "[benchmark][addition][double]") {
 	}
 }
 
-TEST_CASE("2x2 matrices addition double", "[benchmark][addition][double]") {
+TEST_CASE("2x2 Matrix addition (double)", "[benchmark][addition][double]") {
 	SECTION("SiLi") {
 		auto m1 = SiLi::Matrix{{{double{2}, double{3}},
 								 {double{4}, double{5}}}};
@@ -91,7 +91,7 @@ TEST_CASE("2x2 matrices addition double", "[benchmark][addition][double]") {
 	}
 }
 
-TEST_CASE("3x3 matrices addition double", "[benchmark][addition][double]") {
+TEST_CASE("3x3 Matrix addition (double)", "[benchmark][addition][double]") {
 	SECTION("SiLi") {
 		auto m1 = SiLi::Matrix{{{double{  2}, double{  3}, double{  4}},
 								 {double{  4}, double{  5}, double{  5}},
@@ -153,7 +153,7 @@ TEST_CASE("3x3 matrices addition double", "[benchmark][addition][double]") {
 	}
 }
 
-TEST_CASE("4x4 matrices addition double", "[benchmark][addition][double]") {
+TEST_CASE("4x4 Matrix addition (double)", "[benchmark][addition][double]") {
 	constexpr int N = 4;
 	SECTION("SiLi") {
 		auto m1 = SiLi::Matrix<N, N, double>{};
@@ -212,7 +212,7 @@ TEST_CASE("4x4 matrices addition double", "[benchmark][addition][double]") {
 	}
 }
 
-TEST_CASE("5x5 matrices addition double", "[benchmark][addition][double]") {
+TEST_CASE("5x5 Matrix addition (double)", "[benchmark][addition][double]") {
 	constexpr int N = 5;
 	SECTION("SiLi") {
 		auto m1 = SiLi::Matrix<N, N, double>{};
@@ -271,7 +271,7 @@ TEST_CASE("5x5 matrices addition double", "[benchmark][addition][double]") {
 	}
 }
 
-TEST_CASE("10x10 matrices addition double", "[benchmark][addition][double]") {
+TEST_CASE("10x10 Matrix addition (double)", "[benchmark][addition][double]") {
 	constexpr int N = 10;
 	SECTION("SiLi") {
 		auto m1 = SiLi::Matrix<N, N, double>{};
@@ -330,7 +330,7 @@ TEST_CASE("10x10 matrices addition double", "[benchmark][addition][double]") {
 	}
 }
 
-TEST_CASE("20x20 matrices addition double", "[benchmark][addition][double]") {
+TEST_CASE("20x20 Matrix addition (double)", "[benchmark][addition][double]") {
 	constexpr int N = 20;
 	SECTION("SiLi") {
 		auto m1 = SiLi::Matrix<N, N, double>{};
@@ -389,7 +389,7 @@ TEST_CASE("20x20 matrices addition double", "[benchmark][addition][double]") {
 	}
 }
 
-TEST_CASE("50x50 matrices addition double", "[benchmark][addition][double]") {
+TEST_CASE("50x50 Matrix addition (double)", "[benchmark][addition][double]") {
 	constexpr int N = 50;
 	SECTION("SiLi") {
 		auto m1 = SiLi::Matrix<N, N, double>{};
@@ -448,7 +448,7 @@ TEST_CASE("50x50 matrices addition double", "[benchmark][addition][double]") {
 	}
 }
 
-TEST_CASE("100x100 matrices addition double", "[benchmark][addition][double]") {
+TEST_CASE("100x100 Matrix addition (double)", "[benchmark][addition][double]") {
 	constexpr int N = 100;
 	SECTION("SiLi") {
 		auto m1 = SiLi::Matrix<N, N, double>{};

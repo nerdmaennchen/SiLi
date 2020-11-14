@@ -7,7 +7,7 @@
 #include <random>
 #include <string>
 
-TEST_CASE("1x1 matrices inverse double", "[benchmark][inverse][double]") {
+TEST_CASE("1x1 Matrix inverse (double)", "[benchmark][inverse][double]") {
 	SECTION("SiLi") {
 		auto m1 = SiLi::Matrix{{{double{2}}}};
 
@@ -37,7 +37,7 @@ TEST_CASE("1x1 matrices inverse double", "[benchmark][inverse][double]") {
 	}
 }
 
-TEST_CASE("2x2 matrices inverse double", "[benchmark][inverse][double]") {
+TEST_CASE("2x2 Matrix inverse (double)", "[benchmark][inverse][double]") {
 	SECTION("SiLi") {
 		auto m1 = SiLi::Matrix{{{double{2}, double{3}},
 								 {double{4}, double{5}}}};
@@ -72,7 +72,7 @@ TEST_CASE("2x2 matrices inverse double", "[benchmark][inverse][double]") {
 	}
 }
 
-TEST_CASE("3x3 matrices inverse double", "[benchmark][inverse][double]") {
+TEST_CASE("3x3 Matrix inverse (double)", "[benchmark][inverse][double]") {
 	SECTION("SiLi") {
 		auto m1 = SiLi::Matrix{{{double{  2}, double{  3}, double{  4}},
 								 {double{  4}, double{  5}, double{  5}},
@@ -115,7 +115,7 @@ TEST_CASE("3x3 matrices inverse double", "[benchmark][inverse][double]") {
 	}
 }
 
-TEST_CASE("4x4 matrices inverse double", "[benchmark][inverse][double]") {
+TEST_CASE("4x4 Matrix inverse (double)", "[benchmark][inverse][double]") {
 	constexpr int N = 4;
 	SECTION("SiLi") {
 		auto m1 = SiLi::Matrix<N, N, double>{};
@@ -168,7 +168,7 @@ TEST_CASE("4x4 matrices inverse double", "[benchmark][inverse][double]") {
 	}
 }
 
-TEST_CASE("5x5 matrices inverse double", "[benchmark][inverse][double]") {
+TEST_CASE("5x5 Matrix inverse (double)", "[benchmark][inverse][double]") {
 	constexpr int N = 5;
 	SECTION("SiLi") {
 		auto m1 = SiLi::Matrix<N, N, double>{};
@@ -221,7 +221,7 @@ TEST_CASE("5x5 matrices inverse double", "[benchmark][inverse][double]") {
 	}
 }
 
-TEST_CASE("10x10 matrices inverse double", "[benchmark][inverse][double]") {
+TEST_CASE("10x10 Matrix inverse (double)", "[benchmark][inverse][double]") {
 	constexpr int N = 10;
 	SECTION("SiLi") {
 		auto m1 = SiLi::Matrix<N, N, double>{};
@@ -274,7 +274,7 @@ TEST_CASE("10x10 matrices inverse double", "[benchmark][inverse][double]") {
 	}
 }
 
-TEST_CASE("20x20 matrices inverse double", "[benchmark][inverse][double]") {
+TEST_CASE("20x20 Matrix inverse (double)", "[benchmark][inverse][double]") {
 	constexpr int N = 20;
 	SECTION("SiLi") {
 		auto m1 = SiLi::Matrix<N, N, double>{};
