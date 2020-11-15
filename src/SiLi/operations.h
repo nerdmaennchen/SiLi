@@ -932,8 +932,9 @@ constexpr auto inv(V v) -> std::tuple<typename V::value_t, V> {
 		return {v(0, 0), v};
 	}
 	auto c = T(1) / d;
-	return {d, Matrix{{{ v(1, 1), -v(0, 1)},
-	                   {-v(1, 0),  v(0, 0)}}}*c};
+	return {d, Matrix{{{ v(1, 1)*c, -v(0, 1)*c},
+	                   {-v(1, 0)*c,  v(0, 0)*c}}}};
+
 }
 
 //inverse of 3x3
