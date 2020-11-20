@@ -81,18 +81,37 @@ public:
 		return get(*this, entry);
 	}
 
+	template <int row, int col>
+	constexpr auto at() -> T& {
+		return get<row, col>(*this);
+	}
+	template <int row, int col>
+	constexpr auto at() const -> T const& {
+		return get<row, col>(*this);
+	}
+
+	template <int entry>
+	constexpr auto at() -> T& requires (Cols == 1 or Rows == 1) {
+		return get<entry>(*this);
+	}
+	template <int entry>
+	constexpr auto at() const -> T const& requires (Cols == 1 or Rows == 1) {
+		return get<entry>(*this);
+	}
+
+
 
 
 	constexpr auto operator=(T const& s) -> View& {
-		for_each_constexpr<View>([&]<int row, int col>() {
-			this->operator()(row, col) = s;
+		for_each_constexpr<View>([&]<int row, int col>() constexpr {
+			at<row, col>() = s;
 		});
 		return *this;
 	}
 	template <_concept::Matrix V>
 	constexpr auto operator=(V const& v) -> View& requires (Rows == V::Rows and Cols == V::Cols) {
-		for_each_constexpr<View>([&]<int row, int col>() {
-			this->operator()(row, col) = v(row, col);
+		for_each_constexpr<View>([&]<int row, int col>() constexpr {
+			at<row, col>() = v.template at<row, col>();
 		});
 		return *this;
 	}

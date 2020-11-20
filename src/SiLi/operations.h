@@ -41,7 +41,7 @@ template <int Row, int Col, _concept::Matrix M>
 constexpr auto at(M&& m) -> auto& {
 	static_assert(0 <= Row and Row < rows_v<M>, "accessing outside of valid range");
 	static_assert(0 <= Col and Col < cols_v<M>, "accessing outside of valid range");
-	return m(Row, Col);
+	return m.template at<Row, Col>();
 }
 
 /*! Access element
@@ -131,19 +131,17 @@ constexpr auto apply(L const& l, R const& r, Operator op) {
 }
 
 template <_concept::Matrix V, typename Operator>
-constexpr auto self_assign_apply(V&& v, Operator op) -> auto& {
+constexpr void self_assign_apply(V&& v, Operator op) {
 	for_each_constexpr<V>([&]<auto row, auto col>() {
 		op(at<row, col>(v));
 	});
-	return v;
 }
 
 template <_concept::Matrix L, _concept::Matrix R, typename Operator> requires (rows_v<L> == rows_v<R> and cols_v<L> == cols_v<R>)
-constexpr auto self_assign_apply(L&& l, R const& r, Operator op) -> auto& {
+constexpr void self_assign_apply(L&& l, R const& r, Operator op) {
 	for_each_constexpr<L>([&]<auto row, auto col>() {
 		op(at<row, col>(l), at<row, col>(r));
 	});
-	return l;
 }
 }
 
@@ -164,7 +162,7 @@ constexpr auto self_assign_apply(L&& l, R const& r, Operator op) -> auto& {
  */
 template <_concept::Matrix M>
 constexpr auto operator+(M const& m) {
-	return details::apply(m, [](auto e) { return +e; });
+	return details::apply(m, [](auto e) constexpr { return +e; });
 }
 
 /*! Elementwise addition
@@ -189,7 +187,7 @@ constexpr auto operator+(M const& m) {
  */
 template <_concept::Matrix L, _concept::Matrix R>
 constexpr auto operator+(L const& l, R const& r) {
-	return details::apply(l, r, [](auto l, auto r) { return l + r; });
+	return details::apply(l, r, [](auto l, auto r) constexpr { return l + r; });
 }
 
 /*! Elementwise addition
@@ -213,8 +211,10 @@ constexpr auto operator+(L const& l, R const& r) {
  * \endcode
  */
 template <_concept::Matrix L, _concept::Matrix R>
-constexpr auto operator+=(L&& l, R const& r) -> auto& {
-	return details::self_assign_apply(l, r, [](auto& l, auto r) { l += r; });
+constexpr auto operator+=(L& l, R const& r) -> auto& {
+//	l = l + r;
+	details::self_assign_apply(l, r, [](auto& l, auto r) constexpr { l += r; });
+	return l;
 }
 
 /*! Elementwise negation
@@ -234,7 +234,7 @@ constexpr auto operator+=(L&& l, R const& r) -> auto& {
  */
 template <_concept::Matrix M>
 constexpr auto operator-(M const& m) {
-	return details::apply(m, [](auto e) { return -e; });
+	return details::apply(m, [](auto e) constexpr { return -e; });
 }
 
 /*! Elementwise subtraction
@@ -259,7 +259,7 @@ constexpr auto operator-(M const& m) {
  */
 template <_concept::Matrix L, _concept::Matrix R>
 constexpr auto operator-(L const& l, R const& r) {
-	return details::apply(l, r, [](auto l, auto r) { return l - r; });
+	return details::apply(l, r, [](auto l, auto r) constexpr { return l - r; });
 }
 
 /*! Elementwise subtraction
@@ -284,7 +284,8 @@ constexpr auto operator-(L const& l, R const& r) {
  */
 template <_concept::Matrix L, _concept::Matrix R>
 constexpr auto operator-=(L& l, R const& r) -> auto& {
-	return details::self_assign_apply(l, r, [](auto& l, auto r) { l -= r; });
+	details::self_assign_apply(l, r, [](auto& l, auto r) constexpr { l -= r; });
+	return l;
 }
 
 /*! Matrix multiplication
@@ -322,7 +323,7 @@ constexpr auto operator*(L const& l, R const& r) {
 		auto ret = Matrix<L::Rows, R::Cols, U>{};
 		for_constexpr<0, L::Rows>([&]<int row>() {
 			for_constexpr<0, R::Cols>([&]<int col>() {
-				ret(row, col) = U{view_row<row>(l) * view_col<col>(r)};
+				at<row, col>(ret) = U{view_row<row>(l) * view_col<col>(r)};
 			});
 		});
 		return ret;
@@ -389,7 +390,8 @@ constexpr auto operator*(value_t<R> const& s, R&& r) {
  */
 template <_concept::Matrix L>
 constexpr auto operator*=(L&& l, value_t<L> const& s) -> auto& {
-	return details::self_assign_apply(l, [s](auto& l) { l *= s; });
+	details::self_assign_apply(l, [s](auto& l) { l *= s; });
+	return l;
 }
 
 /*! Divide elements by a scalar
@@ -432,7 +434,8 @@ constexpr auto operator/(L const& l, value_t<L> const& s) {
  */
 template <_concept::Matrix L>
 constexpr auto operator/=(L&& l, value_t<L> const& s) -> L& {
-	return details::self_assign_apply(l, [s](auto& l) { l /= s; });
+	details::self_assign_apply(l, [s](auto& l) { l /= s; });
+	return l;
 }
 
 /*! Elementwise comparision
@@ -738,24 +741,24 @@ constexpr auto luDecomposition_L(V const& v) {
 // compute 1x1 determinant
 template <_concept::Matrix V> requires (V::Rows == 1 and V::Cols == 1)
 constexpr auto det(V const& v) {
-	return v(0, 0);
+	return at<0, 0>(v);
 }
 
 // compute 2x2 determinant
 template <_concept::Matrix V> requires (V::Rows == 2 and V::Cols == 2)
 constexpr auto det(V const& v) {
-	return v(0, 0)*v(1, 1) - v(0, 1)*v(1, 0);
+	return at<0, 0>(v)*at<1, 1>(v) - at<0, 1>(v)*at<1, 0>(v);
 }
 
 // compute 3x3 determinant
 template <_concept::Matrix V> requires (V::Rows == 3 and V::Cols == 3)
 constexpr auto det(V const& v) {
-	return   (v(0, 0)*v(1, 1)*v(2, 2)
-	        + v(0, 1)*v(1, 2)*v(2, 0)
-	        + v(0, 2)*v(1, 0)*v(2, 1))
-	       - (v(0, 2)*v(1, 1)*v(2, 0)
-	        + v(0, 1)*v(1, 0)*v(2, 2)
-	        + v(0, 0)*v(1, 2)*v(2, 1));
+	return   (at<0, 0>(v)*at<1, 1>(v)*at<2, 2>(v)
+	        + at<0, 1>(v)*at<1, 2>(v)*at<2, 0>(v)
+	        + at<0, 2>(v)*at<1, 0>(v)*at<2, 1>(v))
+	       - (at<0, 2>(v)*at<1, 1>(v)*at<2, 0>(v)
+	        + at<0, 1>(v)*at<1, 0>(v)*at<2, 2>(v)
+	        + at<0, 0>(v)*at<1, 2>(v)*at<2, 1>(v));
 }
 
 /*! Compute determinant
@@ -780,7 +783,7 @@ constexpr auto det(M const& m) {
 	auto L        = luDecomposition_L(m);
 
 	for_constexpr<0, M::Rows>([&]<int i>() {
-		retValue *= L(i, i);
+		retValue *= at<i, i>(L);
 	});
 
 	using std::isfinite;
@@ -793,12 +796,7 @@ constexpr auto det(M const& m) {
 //element wise product
 template <_concept::Matrix L, _concept::Matrix R> requires (L::Rows == R::Rows and L::Cols == R::Cols)
 constexpr auto element_multi(L const& l, R const& r) {
-	using U = decltype(std::declval<typename L::value_t>() * std::declval<typename R::value_t>());
-	auto ret = Matrix<L::Rows, L::Cols, U>{};
-	for_each_constexpr<L>([&]<auto row, auto col>() {
-		ret(row, col) = l(row, col) * r(row, col);
-	});
-	return ret;
+	return details::apply(l, r, [](auto l, auto r) constexpr { return l * r; });
 }
 
 /*! Cross product of two vectors.
@@ -852,7 +850,7 @@ template <_concept::Matrix M>
 constexpr auto sum(M const& m) {
 	auto acc = value_t<M>{};
 	for_each_constexpr<M>([&]<auto row, auto col>() {
-		acc += m(row, col);
+		acc += at<row, col>(m);
 	});
 	return acc;
 }
@@ -915,10 +913,10 @@ constexpr auto inv(V v) -> std::tuple<typename V::value_t, V> {
 	using std::abs;
 	auto d = det(v);
 	if (abs(d) < 1.e-5) {
-		return {v(0, 0), v};
+		return {at<0, 0>(v), v};
 	}
 
-	v(0, 0) = T(1) / v(0, 0);
+	at<0, 0>(v) = T(1) / at<0, 0>(v);
 	return {d, v};
 }
 
@@ -929,32 +927,33 @@ constexpr auto inv(V v) -> std::tuple<typename V::value_t, V> {
 	using std::abs;
 	auto d = det(v);
 	if (abs(d) < 1.e-5) {
-		return {v(0, 0), v};
+		return {at<0, 0>(v), v};
 	}
 	auto c = T(1) / d;
-	return {d, Matrix{{{ v(1, 1)*c, -v(0, 1)*c},
-	                   {-v(1, 0)*c,  v(0, 0)*c}}}};
+	return {d, Matrix{{{ at<1, 1>(v)*c, -at<0, 1>(v)*c},
+	                   {-at<1, 0>(v)*c,  at<0, 0>(v)*c}}}};
 
 }
 
 //inverse of 3x3
-template <_concept::Matrix V> requires (V::Rows == V::Cols and V::Rows == 3)
-constexpr auto inv(V v) -> std::tuple<typename V::value_t, V> {
-	using T = typename V::value_t;
+template <_concept::Matrix M> requires (M::Rows == M::Cols and M::Rows == 3)
+constexpr auto inv(M const& m) -> std::tuple<typename M::value_t, M> {
+	using T = typename M::value_t;
+	constexpr int N = M::Rows;
 	using std::abs;
-	auto d = det(v);
+	auto d = det(m);
 	if (abs(d) < 1.e-5) {
-		return {v(0, 0), v};
+		return {at<0, 0>(m), m};
 	}
 	auto c = T(1) / d;
-	auto ret = V{};
+	auto ret = M{};
 
-	for_each_constexpr<V>([&]<int row, int col>() {
-		auto tl = v((row+1)%3, (col+1)%3);
-		auto br = v((row+2)%3, (col+2)%3);
-		auto tr = v((row+1)%3, (col+2)%3);
-		auto bl = v((row+2)%3, (col+1)%3);
-		ret(col, row) = (tl*br-tr*bl) * c;
+	for_each_constexpr<M>([&]<int row, int col>() {
+		auto tl = at<(row+1)%3, (col+1)%3>(m);
+		auto br = at<(row+2)%3, (col+2)%3>(m);
+		auto tr = at<(row+1)%3, (col+2)%3>(m);
+		auto bl = at<(row+2)%3, (col+1)%3>(m);
+		at<col, row>(ret) = (tl*br-tr*bl) * c;
 	});
 	return {d, ret};
 }
@@ -979,11 +978,11 @@ template <_concept::Matrix M> requires (M::Rows == M::Cols and M::Rows > 3)
 constexpr auto inv(M m) -> std::tuple<typename M::value_t, M> {
 	using T = typename M::value_t;
 	constexpr int N = M::Rows;
-	auto det   = T{1};
+	auto det        = T{1};
 
 	bool failed{false};
 	for_constexpr<0, N>([&]<int p>() -> bool {
-		auto pivot = m(p, p);
+		auto pivot = at<p, p>(m);
 		det = det * pivot;
 		if (fabs(pivot) < 1.e-5) {
 			failed = true;
@@ -992,10 +991,10 @@ constexpr auto inv(M m) -> std::tuple<typename M::value_t, M> {
 		view_col<p>(m) /= -pivot;
 		for_each_constexpr<M>([&]<int i, int j>() {
 			if (i == p or j == p) return;
-			m(i, j) += m(p, j) * m(i, p);
+			at<i, j>(m) += at<p, j>(m) * at<i, p>(m);
 		});
 		view_row<p>(m) /= pivot;
-		m(p, p) = T{1}/ pivot;
+		at<p, p>(m) = T{1}/ pivot;
 		return true;
 	});
 	if (failed) {
@@ -1137,7 +1136,7 @@ constexpr auto norm(V const& v) {
 template <_concept::Matrix M>
 constexpr auto abs(M const& m) {
 	using std::abs;
-	return details::apply(m, [](auto e) { return abs(e); });
+	return details::apply(m, [](auto e) constexpr { return abs(e); });
 }
 
 

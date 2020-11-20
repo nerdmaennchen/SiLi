@@ -389,7 +389,7 @@ TEST_CASE("20x20 Matrix addition (double)", "[benchmark][addition][double]") {
 	}
 }
 
-TEST_CASE("50x50 Matrix addition (double)", "[benchmark][addition][double]") {
+/*TEST_CASE("50x50 Matrix addition (double)", "[benchmark][addition][double]") {
 	constexpr int N = 50;
 	SECTION("SiLi") {
 		auto m1 = SiLi::Matrix<N, N, double>{};
@@ -505,4 +505,4 @@ TEST_CASE("100x100 Matrix addition (double)", "[benchmark][addition][double]") {
 			return z;
 		};
 	}
-}
+}*/

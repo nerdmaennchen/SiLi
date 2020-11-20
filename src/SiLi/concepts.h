@@ -160,16 +160,16 @@ namespace details {
 // !TODO for_each_constexpr, is there a standard solution?
 template <_concept::Matrix V, typename L>
 constexpr void for_each_constexpr_void(L&& lambda) {
-	for_constexpr<0, rows_v<V>>([&]<auto row>() {
-		for_constexpr<0, cols_v<V>>([&]<auto col>() {
+	for_constexpr<0, rows_v<V>>([&]<auto row>() constexpr {
+		for_constexpr<0, cols_v<V>>([&]<auto col>() constexpr {
 			lambda.template operator()<row, col>();
 		});
 	});
 }
 template <_concept::Matrix V, typename L>
 constexpr bool for_each_constexpr_bool(L&& lambda) {
-	return for_constexpr<0, rows_v<V>>([&]<auto row>() {
-		return for_constexpr<0, cols_v<V>>([&]<auto col>() {
+	return for_constexpr<0, rows_v<V>>([&]<auto row>() constexpr {
+		return for_constexpr<0, cols_v<V>>([&]<auto col>() constexpr {
 			return lambda.template operator()<row, col>();
 		});
 	});
@@ -211,6 +211,25 @@ constexpr auto get(V&& v, int entry) -> auto& requires(rows_v<V> == 1 or cols_v<
 		return v.data()[entry * stride_v<V>];
 	}
 }
+
+template <int row, int col, _concept::Matrix M>
+constexpr auto get(M&& m) -> auto& {
+	if constexpr (transposed_v<M>) {
+		return m.data()[row + col * stride_v<M>];
+	} else {
+		return m.data()[col + row * stride_v<M>];
+	}
+}
+
+template <int entry, _concept::Matrix M>
+constexpr auto get(M&& m) -> auto& requires(rows_v<M> == 1 or cols_v<M> == 1) {
+	if constexpr ((rows_v<M> == 1 and not transposed_v<M>) or (cols_v<M> == 1 and transposed_v<M>)) {
+		return m.data()[entry];
+	} else {
+		return m.data()[entry * stride_v<M>];
+	}
+}
+
 
 
 
