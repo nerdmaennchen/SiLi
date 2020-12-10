@@ -2,6 +2,7 @@
 
 #include "concepts.h"
 
+#include <algorithm>
 #include <cmath>
 #include <tuple>
 
