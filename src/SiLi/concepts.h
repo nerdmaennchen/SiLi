@@ -95,10 +95,10 @@ template <_concept::Matrix V> struct transposed<V&&> : std::integral_constant<bo
 template <_concept::Matrix V> struct transposed<V const&> : std::integral_constant<bool, V::Transposed> {};
 }
 
-template <typename T> constexpr int  rows_v       = detail::rows<T>::value;;
-template <typename T> constexpr int  cols_v       = detail::cols<T>::value;;
-template <typename T> constexpr int  stride_v     = detail::stride<T>::value;;
-template <typename T> constexpr bool transposed_v = detail::transposed<T>::value;;
+template <typename T> constexpr int  rows_v       = detail::rows<T>::value;
+template <typename T> constexpr int  cols_v       = detail::cols<T>::value;
+template <typename T> constexpr int  stride_v     = detail::stride<T>::value;
+template <typename T> constexpr bool transposed_v = detail::transposed<T>::value;
 
 template <_concept::Matrix T>
 constexpr bool is_vector_v = (rows_v<T> == 1 or cols_v<T> == 1);

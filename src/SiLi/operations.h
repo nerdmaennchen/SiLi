@@ -188,7 +188,7 @@ constexpr auto operator+(M const& m) {
  */
 template <_concept::Matrix L, _concept::Matrix R>
 constexpr auto operator+(L const& l, R const& r) {
-	return details::apply(l, r, [](auto l, auto r) constexpr { return l + r; });
+	return details::apply(l, r, [](auto _l, auto _r) constexpr { return _l + _r; });
 }
 
 /*! Elementwise addition
@@ -214,7 +214,7 @@ constexpr auto operator+(L const& l, R const& r) {
 template <_concept::Matrix L, _concept::Matrix R>
 constexpr auto operator+=(L& l, R const& r) -> auto& {
 //	l = l + r;
-	details::self_assign_apply(l, r, [](auto& l, auto r) constexpr { l += r; });
+	details::self_assign_apply(l, r, [](auto& _l, auto _r) constexpr { _l += _r; });
 	return l;
 }
 
@@ -260,7 +260,7 @@ constexpr auto operator-(M const& m) {
  */
 template <_concept::Matrix L, _concept::Matrix R>
 constexpr auto operator-(L const& l, R const& r) {
-	return details::apply(l, r, [](auto l, auto r) constexpr { return l - r; });
+	return details::apply(l, r, [](auto _l, auto _r) constexpr { return _l - _r; });
 }
 
 /*! Elementwise subtraction
@@ -285,7 +285,7 @@ constexpr auto operator-(L const& l, R const& r) {
  */
 template <_concept::Matrix L, _concept::Matrix R>
 constexpr auto operator-=(L& l, R const& r) -> auto& {
-	details::self_assign_apply(l, r, [](auto& l, auto r) constexpr { l -= r; });
+	details::self_assign_apply(l, r, [](auto& _l, auto _r) constexpr { _l -= _r; });
 	return l;
 }
 
@@ -349,7 +349,7 @@ constexpr auto operator*(L const& l, R const& r) {
  */
 template <_concept::Matrix L>
 constexpr auto operator*(L const& l, value_t<L> const& s) {
-	return details::apply(l, [s](auto l) { return l * s; });
+	return details::apply(l, [s](auto _l) { return _l * s; });
 }
 
 /*! Scalar multiplication
@@ -391,7 +391,7 @@ constexpr auto operator*(value_t<R> const& s, R&& r) {
  */
 template <_concept::Matrix L>
 constexpr auto operator*=(L&& l, value_t<L> const& s) -> auto& {
-	details::self_assign_apply(l, [s](auto& l) { l *= s; });
+	details::self_assign_apply(l, [s](auto& _l) { _l *= s; });
 	return l;
 }
 
@@ -413,7 +413,7 @@ constexpr auto operator*=(L&& l, value_t<L> const& s) -> auto& {
  */
 template <_concept::Matrix L>
 constexpr auto operator/(L const& l, value_t<L> const& s) {
-	return details::apply(l, [s](auto l) { return l / s; });
+	return details::apply(l, [s](auto _l) { return _l / s; });
 }
 
 
@@ -435,7 +435,7 @@ constexpr auto operator/(L const& l, value_t<L> const& s) {
  */
 template <_concept::Matrix L>
 constexpr auto operator/=(L&& l, value_t<L> const& s) -> L& {
-	details::self_assign_apply(l, [s](auto& l) { l /= s; });
+	details::self_assign_apply(l, [s](auto& _l) { _l /= s; });
 	return l;
 }
 
@@ -797,7 +797,7 @@ constexpr auto det(M const& m) {
 //element wise product
 template <_concept::Matrix L, _concept::Matrix R> requires (L::Rows == R::Rows and L::Cols == R::Cols)
 constexpr auto element_multi(L const& l, R const& r) {
-	return details::apply(l, r, [](auto l, auto r) constexpr { return l * r; });
+	return details::apply(l, r, [](auto _l, auto _r) constexpr { return _l * _r; });
 }
 
 /*! Cross product of two vectors.
@@ -940,7 +940,6 @@ constexpr auto inv(V v) -> std::tuple<typename V::value_t, V> {
 template <_concept::Matrix M> requires (M::Rows == M::Cols and M::Rows == 3)
 constexpr auto inv(M const& m) -> std::tuple<typename M::value_t, M> {
 	using T = typename M::value_t;
-	constexpr int N = M::Rows;
 	using std::abs;
 	auto d = det(m);
 	if (abs(d) < 1.e-5) {
